@@ -1,0 +1,83 @@
+{
+  "list": {
+    "title": "Routes",
+    "empty": "No routes yet. Import a ROUTE TEMPLATE CSV or create one to get started.",
+    "operationCount": "{{count}} operation",
+    "operationCount_other": "{{count}} operations",
+    "createdBy": "Created by {{name}}",
+    "updated": "Updated {{when}}",
+    "inactive": "Inactive"
+  },
+  "import": {
+    "title": "Import ROUTE TEMPLATE CSV",
+    "dropzone": "Drag a CSV file here or click to select",
+    "dropzoneHint": "Only .csv files in the ROUTE TEMPLATE layout are supported",
+    "success": "Imported routes: {{created}} new, {{updated}} updated ({{operations}} operations)",
+    "failed": "Import failed"
+  },
+  "create": {
+    "title": "New route",
+    "code": "Route code",
+    "codePlaceholder": "e.g. ROUTE1",
+    "name": "Route name",
+    "namePlaceholder": "e.g. RT_Shift End Trim pack, India",
+    "submit": "Create route",
+    "success": "Route created",
+    "failed": "Could not create route"
+  },
+  "editor": {
+    "back": "Back to routes",
+    "addOperation": "Add operation",
+    "deleteConfirm": "Delete this operation?",
+    "deleteRoute": "Delete route",
+    "deleteRouteConfirm": "Delete this route and all of its operations?",
+    "saved": "Changes saved",
+    "saveFailed": "Could not save changes",
+    "header": "Route details",
+    "save": "Save route details",
+    "noOperations": "No operations yet. Use Add operation to create one."
+  },
+  "header": {
+    "code": "Route code",
+    "routeNumber": "Route number",
+    "name": "Route name",
+    "isActive": "Active (selectable on BOM lines)"
+  },
+  "columns": {
+    "operationNo": "Operation No",
+    "operationId": "Operation ID",
+    "description": "Description",
+    "descriptionLen": "Description Len",
+    "nextOperation": "Next Operation",
+    "swingWc": "Swing WC",
+    "runtimeType": "Runtime Type",
+    "setUpTime": "Set Up Time",
+    "time": "Time",
+    "resourceId": "Resource ID",
+    "resourceGroup": "Resource Group",
+    "routeGroupId": "Route Group ID",
+    "priority": "Priority",
+    "condition": "Condition",
+    "formula": "Formula"
+  },
+  "audit": {
+    "title": "Change history",
+    "when": "When",
+    "who": "Who",
+    "change": "Change",
+    "field": "Field",
+    "from": "From",
+    "to": "To",
+    "empty": "No changes recorded yet"
+  },
+  "help": {
+    "title": "How to use Routes",
+    "intro": "This screen lets you define manufacturing routes and their operations. BOM lines link to a route by its code.",
+    "operations": "Operations are shown as an ordered list. Use the arrows to reorder them.",
+    "edit": "Double-click a cell to edit it. Changes are saved automatically and recorded in the change history.",
+    "code": "The route code (e.g. ROUTE1) is the identifier a BOM line stores in its Route field.",
+    "import": "Import a ROUTE TEMPLATE CSV to create or update several routes at once; existing routes are matched by code.",
+    "export": "Use Export CSV to download this route in the original ROUTE TEMPLATE layout.",
+    "readOnly": "Your role has read-only access. You can view and export, but not edit."
+  }
+}

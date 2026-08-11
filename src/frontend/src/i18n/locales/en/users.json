@@ -1,0 +1,65 @@
+{
+  "title": "User Management",
+  "subtitle": "Manage accounts, roles, and access",
+  "table": {
+    "email": "Email",
+    "displayName": "Name",
+    "roles": "Roles",
+    "status": "Status",
+    "actions": "Actions",
+    "noUsers": "No users yet"
+  },
+  "status": {
+    "enabled": "Active",
+    "disabled": "Disabled"
+  },
+  "actions": {
+    "create": "Add user",
+    "editRoles": "Edit roles",
+    "resetPassword": "Reset password",
+    "enable": "Enable",
+    "disable": "Disable",
+    "delete": "Delete"
+  },
+  "create": {
+    "title": "Add user",
+    "email": "Email",
+    "displayName": "Display name",
+    "password": "Password",
+    "roles": "Roles",
+    "submit": "Create user",
+    "success": "User created",
+    "failed": "Could not create user"
+  },
+  "roles": {
+    "title": "Edit roles",
+    "label": "Roles",
+    "submit": "Save roles",
+    "success": "Roles updated",
+    "failed": "Could not update roles"
+  },
+  "reset": {
+    "title": "Reset password",
+    "description": "Set a new password for {{email}}.",
+    "newPassword": "New password",
+    "submit": "Reset password",
+    "success": "Password reset",
+    "failed": "Could not reset password"
+  },
+  "enable": {
+    "success": "User enabled",
+    "failed": "Could not enable user"
+  },
+  "disable": {
+    "confirmTitle": "Disable user",
+    "confirmMessage": "Disable {{email}}? They will no longer be able to sign in.",
+    "success": "User disabled",
+    "failed": "Could not disable user"
+  },
+  "delete": {
+    "confirmTitle": "Delete user",
+    "confirmMessage": "Permanently delete {{email}}? This cannot be undone.",
+    "success": "User deleted",
+    "failed": "Could not delete user"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "app": {
+    "title": "BOM Editor",
+    "subtitle": "Define and edit BOM structures before PLM creation"
+  },
+  "nav": {
+    "boms": "BOM Documents",
+    "routes": "Routes",
+    "releaseTemplates": "Release Templates",
+    "users": "User Management",
+    "aiSettings": "AI Settings",
+    "logout": "Sign out"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "add": "Add",
+    "import": "Import CSV",
+    "export": "Export CSV",
+    "open": "Open",
+    "close": "Close",
+    "confirm": "Confirm",
+    "help": "Help"
+  },
+  "roles": {
+    "Manufacturing": "Manufacturing",
+    "DataSpecialist": "Data Specialist",
+    "Admin": "Admin",
+    "Engineering": "Engineering"
+  },
+  "common": {
+    "loading": "Loading\u2026",
+    "readOnly": "Read only",
+    "noData": "No data yet",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "Yes": "Yes",
+  "No": "No",
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign in"
+  }
+}

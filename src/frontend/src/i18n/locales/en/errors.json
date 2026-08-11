@@ -1,0 +1,11 @@
+{
+  "generic": "Something went wrong. Please try again.",
+  "network": "Cannot reach the server. Check your connection and try again.",
+  "unauthorized": "Your session has expired. Please sign in again.",
+  "forbidden": "You do not have permission to perform this action.",
+  "notFound": "The requested item could not be found.",
+  "login": {
+    "invalid": "Invalid email or password",
+    "required": "Email and password are required"
+  }
+}

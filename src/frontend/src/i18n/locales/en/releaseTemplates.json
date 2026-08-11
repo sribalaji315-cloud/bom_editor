@@ -1,0 +1,47 @@
+{
+  "title": "Release Templates",
+  "subtitle": "Define the values available in the BOM Release Template dropdown",
+  "table": {
+    "name": "Name",
+    "status": "Status",
+    "actions": "Actions",
+    "empty": "No release templates yet"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "actions": {
+    "create": "Add template",
+    "edit": "Edit",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "delete": "Delete"
+  },
+  "form": {
+    "createTitle": "Add release template",
+    "editTitle": "Edit release template",
+    "name": "Name",
+    "namePlaceholder": "e.g. Standard Release",
+    "active": "Active",
+    "submit": "Save",
+    "createSuccess": "Template created",
+    "createFailed": "Could not create template",
+    "updateSuccess": "Template updated",
+    "updateFailed": "Could not update template"
+  },
+  "activate": {
+    "success": "Template activated",
+    "failed": "Could not activate template"
+  },
+  "deactivate": {
+    "success": "Template deactivated",
+    "failed": "Could not deactivate template"
+  },
+  "delete": {
+    "confirmTitle": "Delete template",
+    "confirmMessage": "Delete \"{{name}}\"? Existing BOM lines keep their current value.",
+    "success": "Template deleted",
+    "failed": "Could not delete template"
+  }
+}

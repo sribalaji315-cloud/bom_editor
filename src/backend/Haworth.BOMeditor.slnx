@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Haworth.BOMeditor.Api/Haworth.BOMeditor.Api.csproj" />
+  <Project Path="Haworth.BOMeditor.Core/Haworth.BOMeditor.Core.csproj" />
+  <Project Path="Haworth.BOMeditor.Data/Haworth.BOMeditor.Data.csproj" />
+</Solution>

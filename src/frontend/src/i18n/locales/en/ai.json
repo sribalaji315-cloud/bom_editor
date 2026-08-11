@@ -1,0 +1,51 @@
+{
+  "title": "AI Translation Settings",
+  "subtitle": "Configure the LLM provider that turns plain-language rules into Bluestar PLM condition and formula syntax.",
+  "activeProvider": "Active provider",
+  "activeProviderHint": "The enabled provider used for all translations.",
+  "saveSuccess": "AI settings saved.",
+  "saveFailed": "Could not save AI settings.",
+  "save": "Save settings",
+  "providers": {
+    "title": "Providers",
+    "model": "Model",
+    "modelHint": "Use the provider's API model ID (lowercase, hyphenated) — e.g. gpt-4o, claude-3-5-sonnet-latest, gemini-2.0-flash. Not a display name.",
+    "enabled": "Enabled",
+    "apiKey": "API key",
+    "apiKeyPlaceholderSet": "Saved — leave blank to keep",
+    "apiKeyPlaceholderUnset": "Enter API key",
+    "keyStored": "Key stored",
+    "noKey": "No key",
+    "test": "Test",
+    "testHint": "Save first — the test uses the stored key.",
+    "testFailed": "Provider test failed."
+  },
+  "grounding": {
+    "title": "Syntax grounding",
+    "description": "The Bluestar PLM reference guide is sent to the model as grounding for every translation.",
+    "enabled": "Attach reference guide",
+    "current": "Current file",
+    "none": "No file uploaded",
+    "upload": "Upload reference PDF",
+    "uploadSuccess": "Grounding document uploaded.",
+    "uploadFailed": "Could not upload grounding document."
+  },
+  "instructions": {
+    "title": "Agent instructions",
+    "description": "Behaviour guidance layered on top of the reference guide, one set per editing context.",
+    "bom": "BOM conditions & formulas",
+    "route": "Route operation conditions & formulas"
+  },
+  "translate": {
+    "title": "AI translate",
+    "condition": "condition",
+    "formula": "formula",
+    "prompt": "Describe the rule in plain language",
+    "promptPlaceholder": "e.g. Include this line only when the frame width is greater than 1200 mm",
+    "run": "Translate",
+    "result": "Suggested {{field}}",
+    "apply": "Apply",
+    "failed": "Translation failed.",
+    "empty": "Enter a description to translate."
+  }
+}

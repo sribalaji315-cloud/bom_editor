@@ -1,0 +1,134 @@
+﻿Action,level1,level2,level3,level4,level5,level6,level7,level8,Position,BS Object ID,Legacy Swing ID,Drawing No.,Description,Final Quantity,CONSTANT,Class,UoM,IS EBOM,PHANTOM,Release Template,Conditions,Formula,Route,BOM Explosion,No of Pieces in Pack,"Weight in Kg
+(per unit)","Volume in m3
+(per Box)"
+KEEP,1,,,,,,,,,A00000069,ASYITBRD,,Tibas Single Side Rectangular Desk,1,1,RectangularDesk,pcs,YES,YES,ZZZ_FG_pcs,ConfigID=,,,Yes,,,
+KEEP,,2,,,,,,,1,B00001378,,,Rectangle Worktop Assy,1,1,DeskTopAssy,pcs,YES,YES,ZZZ_FG_pcs,"ConfigID= 
+RectangularDesk.ColorOfTop <> NA","DeskTopAssy.Color = RectangularDesk.ColorOfTop
+DeskTopAssy.Length = RectangularDesk.Width
+DeskTopAssy.Width = RectangularDesk.Depth
+
+DeskTopAssy.GrainDirection = IF RectangularDesk.ColorOfTop = = ""LPL0097"" or RectangularDesk.ColorOfTop = = ""LPL0098"" or RectangularDesk.ColorOfTop = = ""LPL0099"" or RectangularDesk.ColorOfTop = = ""LPL0100"" or RectangularDesk.ColorOfTop = = ""LPL0101"" THEN ""Horizontal"" ELSE ""NA"" END IF",,,1,,
+KEEP,,2,,,,,,,2,B00002557,,,Tibas Frame ASSY,1,1,DeskFrame,pcs,YES,YES,ZZZ_FG_pcs,ConfigID=,,,,,,
+KEEP,,,3,,,,,,1,B00002558,I93010201,,Tibas Single Leg Assy,Formula,Formula,Tableleg,pcs,YES,NO,ZZZ_FG_pcs,"ConfigID=
+Tableleg.Qty = DeskFrame.ColorOfLeg<>""NA"" And DeskFrame.TypeofLeg = TOP001","Tableleg.Qty = IF DeskFrame.TypeOfFrame = = ""TFR001"" THEN 2 ELSE 1 END IF
+Tableleg.Depth = DeskFrame.Depth - 2
+Tableleg.Color = DeskFrame.ColorOfLeg",ROUTE1,,,Weight = 0.0027 * ( DeskFrame.Depth - 2 ) + 3.7349,Volume = 0.00003 * ( DeskFrame.Depth - 2 )
+KEEP,,,,4,,,,,1,B00002559,P93011101,93011100,"Tibas,Linear-Leg,Single side,Fix",1,1,Tableleg,pcs,YES,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE2,,,,
+ADD,,,,,5,,,,1,B00003606,I93011201,93011200,"Tibas,Linear-Leg,Single side,Fix,FAB",1,1,Tableleg,pcs,NO,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE3,,,,
+KEEP,,,,,,6,,,1,B00002560,,,cross tube for Tibas single Linear leg,1,1,CrossBeam,pcs,YES,YES,ZZZ_S-FG_pcs,ConfigID=,CrossBeam.SupportedTopDepth = TableLeg.Depth + 2,,,,,
+ADD,,,,,,,7,,1,B00005478,,,"cross tube for Tibas single Linear leg,FAB",1,1,CrossBeam,pcs,NO,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE4,,,,
+ADD,,,,,,,,8,1,B00003243,DUI044202,,"RM,Rectangular tube 60x30x2T6M length",Formula,Formula,MetalTubes,m,NO,NO,ZZZ_RM_pcs,"
+MetalTubes.Qty =
+MetalTubes.Scrapfactor = ","MetalTubes.Qty = (Tableleg.Depth*1.04)/1000
+MetalTubes.Scrapfactor = 6000/(ROUNDDOWN(5800/(CrossBeam.Depth))*(CrossBeam.Depth))",,,,,
+KEEP,,,,,,6,,,2,B00002561,,,straight tube for Tibas single Linear leg,2,2,Tableleg,pcs,YES,YES,ZZZ_S-FG_pcs,ConfigID=,,,,,,
+ADD,,,,,,,7,,1,B00005479,,,"straight tube for Tibas single Linear leg,FAB",1,1,Tableleg,pcs,NO,NO,ZZZ_S-FG_pcs,,,ROUTE5,,,,
+ADD,,,,,,,,8,1,B00003243,DUI044202,,"RM,Rectangular tube 60x30x2T6M length",0.75,0.75,MetalTubes,m,NO,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,,5,,,,2,B00002969,A15201081,,Powdercoat AP,Formula,Formula,PowderCoat,kg,NO,NO,ZZZ_RM_pcs,"ConfigID=
+PowderCoat.Qty =",PowderCoat.Qty = (Tableleg.Depth*0.112)/1000,,,,,
+KEEP,,,,4,,,,,2,B00002562,A93003801,,"TIBAS housing,30*60,M8",2,2,GlideFurniture,pcs,YES,NO,ZZZ_RM_pcs,,,,,,,
+KEEP,,,,4,,,,,3,B00001366,DUI006201,,"Glide Furniture, Hard, PA6, M8X30",2,2,GlideFurniture,pcs,YES,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,4,,,,,4,B00003609,"A41620P06
+A41620P07
+A41620P08
+A41620P09 ",,"PKG,Tibas single side end leg",1,1,PseudoPack,pcs,NO,YES,ZZZ_S-FG_pcs,ConfigID=,,,,1,,
+ADD,,,,,5,,,,3,B00003610,DUI006801,77179147,"PM,Single Wall TUBE 60*30*500MM",1,1,PackagingCarton,pcs,NO,NO,ZZZ_RM_pcs,PseudoPack.Depth <= 598,,,,,,
+ADD,,,,,5,,,,4,B00003611,DUI006901,77179148,"PM,Single Wall TUBE 60*30*650MM",1,1,PackagingCarton,pcs,NO,NO,ZZZ_RM_pcs,PseudoPack.Depth > 598 and PseudoPack.Depth <= 798,,,,,,
+ADD,,,,,5,,,,5,B00003032,D77181155,77181155,"PM, single wall corr, for leg ",2,2,PackagingCarton,pcs,NO,NO,ZZZ_RM_pcs,,,,,,,
+KEEP,,,3,,,,,,2,B00005473,,,Tibas Single Loop Leg Assy,Formula,Formula,Tableleg,pcs,YES,NO,ZZZ_FG_pcs,"ConfigID =   Tableleg.Qty = DeskFrame.ColorOfLeg<>""NA"" And DeskFrame.TypeofLeg = TOP003","Tableleg.Qty = IF DeskFrame.TypeOfFrame = = ""TFR001"" THEN 2 ELSE 1 END IF
+Tableleg.Depth = DeskFrame.Depth - 2
+Tableleg.Color = DeskFrame.ColorOfLeg",ROUTE6,,,Weight = 0.0054 * ( DeskFrame.Depth - 2 ) + 3.7349,Volume = 0.000036 * ( DeskFrame.Depth - 2 )
+KEEP,,,,4,,,,,1,B00005474,,,Tibas Loop Leg Single side Fix,1,1,Tableleg,pcs,YES,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE7,,,,
+ADD,,,,,5,,,,1,B00005480,,,"Tibas Loop Leg Single side Fix,FAB",1,1,Tableleg,pcs,NO,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE8,,,,
+KEEP,,,,,,6,,,1,B00002560,,,cross tube for Tibas single Linear leg,1,1,CrossBeam,pcs,YES,YES,ZZZ_S-FG_pcs,ConfigID=,CrossBeam.SupportedTopDepth = TableLeg.Depth + 2,,,,,
+ADD,,,,,,,7,,1,B00005478,,,"cross tube for Tibas single Linear leg,FAB",1,1,CrossBeam,pcs,NO,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE4,,,,
+ADD,,,,,,,,8,1,B00003243,DUI044202,,"RM,Rectangular tube 60x30x2T6M length",Formula,Formula,MetalTubes,m,NO,NO,ZZZ_RM_pcs,"
+MetalTubes.Qty =
+MetalTubes.Scrapfactor = ","MetalTubes.Qty = (Tableleg.Depth*1.04)/1000
+MetalTubes.Scrapfactor = 6000/(ROUNDDOWN(5800/(CrossBeam.Depth))*(CrossBeam.Depth))",,,,,
+KEEP,,,,,,6,,,2,B00005475,,,straight tube for Tibas single Loop leg,2,2,Tableleg,pcs,YES,YES,ZZZ_S-FG_pcs,ConfigID=,,,,,,
+ADD,,,,,,,7,,1,B00005482,,,"straight tube for Tibas single Loop leg,FAB",1,1,Tableleg,pcs,NO,NO,ZZZ_S-FG_pcs,,,ROUTE5,,,,
+ADD,,,,,,,,8,1,B00003243,DUI044202,,"RM,Rectangular tube 60x30x2T6M length",0.75,0.75,MetalTubes,m,NO,NO,ZZZ_RM_pcs,,,,,,,
+KEEP,,,,,,6,,,3,B00005476,,,Cross Bottom tube for Tibas single Loop leg,1,1,CrossBeam,pcs,YES,YES,ZZZ_S-FG_pcs,ConfigID=,CrossBeam.SupportedTopDepth = TableLeg.Depth + 2,,,,,
+ADD,,,,,,,7,,1,B00005483,,,"Cross tube for tibas single loop Leg,FAB",1,1,CrossBeam,pcs,NO,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE21,,,,
+ADD,,,,,,,,8,1,B00003243,DUI044202,,"RM,Rectangular tube 60x30x2T6M length",Formula,Formula,MetalTubes,m,NO,NO,ZZZ_RM_pcs,"
+MetalTubes.Qty =
+MetalTubes.Scrapfactor = ","MetalTubes.Qty = (Tableleg.Depth*1.04)/1000
+MetalTubes.Scrapfactor = 6000/(ROUNDDOWN(5800/(CrossBeam.Depth))*(CrossBeam.Depth))",,,,,
+ADD,,,,,5,,,,2,B00002969,A15201081,,Powdercoat AP,Formula,Formula,PowderCoat,kg,NO,NO,ZZZ_RM_pcs,"ConfigID=
+PowderCoat.Qty =",PowderCoat.Qty = (Tableleg.Depth*0.112)/1000,,,,,
+KEEP,,,,4,,,,,2,B00003997,DRIX37601,,"SFT,Insert nut for btm rail",2,2,InsertNut,pcs,NO,NO,ZZZ_RM_pcs,,,,,,,
+KEEP,,,,4,,,,,3,B00001366,DUI006201,,"Glide Furniture, Hard, PA6, M8X30",2,2,GlideFurniture,pcs,YES,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,4,,,,,4,B00005484,,,"PKG,Tibas single side Loop leg",1,1,PseudoPack,pcs,NO,YES,ZZZ_S-FG_pcs,ConfigID=,,,,1,,
+ADD,,,,,5,,,,3,B00003610,D77179147,77179147,"PM,Single Wall TUBE 60*30*500MM",2,2,PackagingCarton,pcs,NO,NO,ZZZ_RM_pcs,PseudoPack.Depth <= 598,,,,,,
+ADD,,,,,5,,,,4,B00003611,D77179148,77179148,"PM,Single Wall TUBE 60*30*650MM",2,2,PackagingCarton,pcs,NO,NO,ZZZ_RM_pcs,PseudoPack.Depth > 598 and PseudoPack.Depth <= 798,,,,,,
+ADD,,,,,5,,,,5,B00003032,D77181155,77181155,"PM, single wall corr, for leg ",2,2,PackagingCarton,pcs,NO,NO,ZZZ_RM_pcs,,,,,,,
+KEEP,,,3,,,,,,3,B00002564,I93015601,,Tibas Beam Assy,1,1,Beam,pcs,YES,NO,ZZZ_FG_pcs,ConfigID=,"Beam.SupportedTopWidth = DeskFrame.Width
+Beam.Color = DeskFrame.ColorOfLeg",ROUTE9,,,Weight = 0.0024 * Beam.Width + 2.1545,Volume = 0.00001 * Beam.Width + 0.011
+KEEP,,,,4,,,,,1,B00002565,P93011301,,Tibas main beam,1,1,Beam,pcs,YES,NO,ZZZ_S-FG_pcs,ConfigID=,Beam.Width = Beam.SupportedTopWidth - 16,ROUTE10,,,,
+ADD,,,,,5,,,,1,B00003613,I93011901,,"Tibas main beam,FAB",1,1,Beam,pcs,NO,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE11,,,,
+KEEP,,,,,,6,,,1,B00002566,,,Main beam spine cut,1,1,Beam,pcs,YES,YES,ZZZ_S-FG_pcs,ConfigID=,Beam.Width = Beam.SupportedTopWidth - 16,,,,,
+ADD,,,,,,,7,,1,B00005485,,,"Main beam spine cut,FAB",1,1,Beam,pcs,NO,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE12,,,,
+ADD,,,,,,,,8,1,B00008467,DUI044102,,"RM,Rectangular tube 50x30x2T6M length",Formula,Formula,MetalTubes,m,NO,NO,ZZZ_RM_pcs,"
+MetalTubes.Qty =
+MetalTubes.Scrapfactor = ","MetalTubes.Qty = if Beam.SupportedTopWidth <= 1400 then 1.5 else 2.0 end if
+MetalTubes.Scrapfactor = 6000/(ROUNDDOWN(5800/(Beam.Width))*(Beam.Width))",,,,,
+KEEP,,,,,,6,,,2,B00002567,,,L bracket for Tibas beam,2,2,BeamSupport,pcs,YES,YES,ZZZ_S-FG_pcs,ConfigID=,,,,,,
+ADD,,,,,,,7,,1,B00005486,D93020801,,"L bracket for Tibas beam,FAB",1,1,BeamSupport,pcs,NO,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,,5,,,,2,B00002969,A15201081,,Powdercoat AP,Formula,Formula,PowderCoat,kg,NO,NO,ZZZ_RM_pcs,"ConfigID=
+PowderCoat.Qty =",PowderCoat.Qty = Beam.SupportedTopWidth * 200 * 0.000001 / 4.0,,,,,
+KEEP,,,,4,,,,,2,B00002568,,,Mid-span bracket Tibas,1,1,TopSupport,pcs,YES,YES,ZZZ_S-FG_pcs,ConfigID=,,,,,,
+KEEP,,,,,5,,,,1,B00002569,P93011401,,Tibas MID-SPAN bracket base part,1,1,TopSupport,pcs,YES,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE13,,,,
+ADD,,,,,,6,,,1,B00003616,D93011402,,"Tibas MID-SPAN bracket base part,FAB",1,1,TopSupport,pcs,NO,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,,,6,,,2,B00002969,A15201081,,Powdercoat AP,0.014,0.014,PowderCoat,kg,NO,NO,ZZZ_RM_pcs,ConfigID=,,,,,,
+KEEP,,,,,5,,,,2,B00002570,P93011601,,Flat Plate For Mid-Span Bracket,1,1,BeamSupport,pcs,YES,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE14,,,,
+ADD,,,,,,6,,,1,B00003617,D93011602,,"Flat Plate For Mid-Span Bracket,FAB",1,1,BeamSupport,pcs,NO,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,,,6,,,2,B00002969,A15201081,,Powdercoat AP,0.008,0.008,PowderCoat,kg,NO,NO,ZZZ_RM_pcs,ConfigID=,,,,,,
+KEEP,,,,4,,,,,3,B00002571,P93011501,,Tibas beam Bottom plate,2,2,BeamSupport,pcs,YES,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE14,,,,
+ADD,,,,,5,,,,1,B00003618,D93011502,,"Tibas beam Bottom plate,FAB",1,1,BeamSupport,pcs,NO,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,,5,,,,2,B00002969,A15201081,,Powdercoat AP,0.008,0.008,PowderCoat,kg,NO,NO,ZZZ_RM_pcs,ConfigID=,,,,,,
+KEEP,,,,4,,,,,4,B00002572,D93011701,,TIBAS beam spacer,2,2,Spacer,pcs,YES,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,4,,,,,5,B00002984,DUI004401,,"Wood & Furniture Screw,GB845,PanHead,Philips,9.50,ST4.8X19",5,5,WoodFurnitScrew,pcs,NO,NO,ZZZ_RM_pcs,,,,,,,
+DELETE,,,,4,,,,,6,B00002967,,,"WoodFurnitScrew, GB845, ST4.8x25, PanHead, Philips",5,5,WoodFurnitScrew,pcs,YES,NO,ZZZ_RM_pcs,,,,,,,
+KEEP,,,,4,,,,,6,B00003020,D93010701,,"GB70.3,M6*40, White Zinc",9,9,MetricScrew,pcs,YES,NO,ZZZ_RM_pcs,,,,,,,
+KEEP,,,,4,,,,,7,B00003021,DUI004701,,"Metric Screw,GB70.3,CounterSunkHead,Hexagonal,M6X20",4,4,MetricScrew,pcs,YES,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,4,,,,,8,B00003265,D77114778,,"MD, EPE film w=1200 T=3mm",0.5,0.5,FoamFilm,m,NO,NO,ZZZ_RM_pcs,,,,,2,,
+KEEP,,,3,,,,,,4,B00002573,I93010301,,"Tibas, Leg End Bracket ASSY",Formula,Formula,TopSupport,pcs,YES,NO,ZZZ_FG_pcs,"ConfigID= 
+TopSupport.Qty =   DeskFrame.ColorOfLeg<>""NA""","TopSupport.Qty = IF DeskFrame.TypeOfFrame = = ""TFR001"" THEN 2 ELSE 1 END IF
+TopSupport.Color = DeskFrame.ColorOfLeg",ROUTE15,,,Weight = 0.14,Volume = 0.0093
+KEEP,,,,4,,,,,1,B00002574,P93010601,,"Tibas, Leg End Bracket",1,1,TopSupport,pcs,YES,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE14,,,,
+ADD,,,,,5,,,,1,B00003622,I93010901,,"Tibas, Leg End Bracket,FAB",1,1,TopSupport,pcs,NO,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE16,,,,
+ADD,,,,,,6,,,1,B00005495,D93010902,,"RM,End bkt Extrusion 4M",0.066,0.066,ExtrudedProfile,m,NO,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,,5,,,,2,B00002969,A15201081,,Powdercoat AP,0.077,0.077,PowderCoat,kg,NO,NO,ZZZ_RM_pcs,ConfigID=,,,,,,
+KEEP,,,,4,,,,,2,B00003020,D93010701,,"GB70.3,M6*40, White Zinc",4,4,MetricScrew,pcs,YES,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,4,,,,,3,B00002984,DUI004401,,"Wood & Furniture Screw,GB845,PanHead,Philips,9.50,ST4.8X19",2,2,WoodFurnitScrew,pcs,NO,NO,ZZZ_RM_pcs,,,,,,,
+DELETE,,,,4,,,,,4,B00002967,,,"WoodFurnitScrew, GB845, ST4.8x25, PanHead, Philips",2,2,WoodFurnitScrew,pcs,YES,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,4,,,,,5,B00003761,D77181180,,"PM,5ply Corton box , 75H x 220W x 350L",1,1,PackagingCarton,pcs,NO,NO,ZZZ_RM_pcs,,,,,20,,
+KEEP,,2,,,,,,,,B00005591,ASYITBCTS,,TIBAS single side cable tray assy,1,1,CableTrayAssy,pcs,YES,NO,ZZZ_FG_pcs,"RectangularDesk.CableTray = CAT030  
+ConfigID =","CableTrayAssy.Color = RectangularDesk.ColorOfCableTray
+CableTrayAssy.SupportedTopWidth = RectangularDesk.Width
+CableTrayAssy.Width = RectangularDesk.width - 163",ROUTE17,,,Weight = 0.0013 * CableTrayAssy.SupportedTopWidth + 0.565,Volume = 0.00003 * CableTrayAssy.SupportedTopWidth + 0.0239
+KEEP,,,3,,,,,,,B00005596,P93013901,,TIBAS single side cable tray,1,1,CableTray,pcs,YES,NO,ZZZ_S-FG_pcs,ConfigID=,CableTray.Width = CableTrayAssy.SupportedTopWidth - 142,ROUTE18,,,,
+DELETE,,,,4,,,,,,B00005599,I93013911 ,,TIBAS single side cable tray WONut,1,1,CableTray,pcs,YES,YES,ZZZ_S-FG_pcs,ConfigID=,,,,,,
+DELETE,,,,4,,,,,,B00004492,D99201201 ,," Nut, GB13681, M6x4, HexagonNut",4,4,Nut,pcs,YES,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,4,,,,,,B00008642,I93013901,,"TIBAS single side cable tray,IN0,FAB",1,1,CableTray,pcs,NO,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE19,,,,
+ADD,,,,,5,,,,,B00003247,D86519967,,SPCC 2500*1250*0.8T,Formula,Formula,MetalSheets,m2,NO,NO,ZZZ_RM_pcs,MetalSheets.Qty =,MetalSheets.Qty = if CableTray.SupportedTopWidth <= 1200 then 0.29 else 0.74 end if,,,,,
+ADD,,,,,5,,,,,B00004492,D99201201,,HEX WELD NUTSM6 GB/T 13681,4,4,Nut,pcs,NO,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,4,,,,,,B00002969,A15201081,,Powdercoat AP,Formula,Formula,PowderCoat,kg,NO,NO,ZZZ_RM_pcs,"ConfigID=
+PowderCoat.Qty =",PowderCoat.Qty = ( CableTray.SupportedTopWidth - 340 ) * 260 * 2 *0.000001 / 5.0,,,,,
+KEEP,,,3,,,,,,,B00002577,P93014001,,"Tibas single side cable tray bracket, LH",1,1,CableTrayHolder,pcs,YES,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE13,,,,
+ADD,,,,4,,,,,,B00003629,I93014001,,"Tibas single side cable tray bracket, LH,FAB",1,1,CableTrayHolder,pcs,NO,NO,ZZZ_S-FG_pcs,,,ROUTE20,,,,
+ADD,,,,,5,,,,,B00002968,D85004801,,SPCC 2500*1250*1.2T,0.095,0.095,MetalSheets,m2,NO,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,4,,,,,,B00002969,A15201081,,Powdercoat AP,0.154,0.154,PowderCoat,kg,NO,NO,ZZZ_RM_pcs,ConfigID=,,,,,,
+KEEP,,,3,,,,,,,B00002578,P93014002,,"Tibas single side cable tray bracket, RH",1,1,CableTrayHolder,pcs,YES,NO,ZZZ_S-FG_pcs,ConfigID=,,ROUTE13,,,,
+ADD,,,,4,,,,,,B00003630,I93014002,,"Tibas single side cable tray bracket, RH,FAB",1,1,CableTrayHolder,pcs,NO,NO,ZZZ_S-FG_pcs,,,ROUTE20,,,,
+ADD,,,,,5,,,,,B00002968,D85004801,,SPCC 2500*1250*1.2T,0.095,0.095,MetalSheets,m2,NO,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,,4,,,,,,B00002969,A15201081,,Powdercoat AP,0.154,0.154,PowderCoat,kg,NO,NO,ZZZ_RM_pcs,ConfigID=,,,,,,
+KEEP,,,3,,,,,,,B00003022,D93013701,,"SCR,M6x6,pan,hex,PH,a,bGB70.2, 10.9, zinc coated",12,12,MetricScrew,pcs,YES,NO,ZZZ_RM_pcs,,,,,,,
+KEEP,,,3,,,,,,,B00002984,DUI004401,,"Wood & Furniture Screw,GB845,PanHead,Philips,9.50,ST4.8X19",2,2,WoodFurnitScrew,pcs,YES,NO,ZZZ_RM_pcs,,,,,,,
+ADD,,,3,,,,,,,B00003265,D77114778,,"MD, EPE film w=1200 T=3mm",0.5,0.5,FoamFilm,m,NO,NO,ZZZ_RM_pcs,,,,,4,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
