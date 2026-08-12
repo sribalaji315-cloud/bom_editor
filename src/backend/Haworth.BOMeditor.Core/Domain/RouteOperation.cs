@@ -29,5 +29,8 @@ public class RouteOperation
     public string? RouteGroupId { get; set; }
     public string? Priority { get; set; }
     public string? Condition { get; set; }
+    // AI-translated Bluestar PLM syntax; Condition/Formula hold the natural-language source.
+    public string? ConditionPlm { get; set; }
     public string? Formula { get; set; }
+    public string? FormulaPlm { get; set; }
 }

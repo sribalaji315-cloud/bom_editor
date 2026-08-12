@@ -28,7 +28,9 @@ public record RouteOperationFields
     public string? RouteGroupId { get; init; }
     public string? Priority { get; init; }
     public string? Condition { get; init; }
+    public string? ConditionPlm { get; init; }
     public string? Formula { get; init; }
+    public string? FormulaPlm { get; init; }
 }
 
 public record RouteOperationDto : RouteOperationFields

@@ -3,6 +3,7 @@ using System;
 using Haworth.BOMeditor.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Haworth.BOMeditor.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260812015701_AddBomLinePlmColumns")]
+    partial class AddBomLinePlmColumns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -382,9 +385,6 @@ namespace Haworth.BOMeditor.Data.Migrations
                     b.Property<string>("Condition")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ConditionPlm")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
@@ -392,9 +392,6 @@ namespace Haworth.BOMeditor.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Formula")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("FormulaPlm")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("NextOperation")

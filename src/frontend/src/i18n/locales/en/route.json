@@ -58,7 +58,9 @@
     "routeGroupId": "Route Group ID",
     "priority": "Priority",
     "condition": "Condition",
-    "formula": "Formula"
+    "conditionPlm": "Condition (PLM)",
+    "formula": "Formula",
+    "formulaPlm": "Formula (PLM)"
   },
   "audit": {
     "title": "Change history",

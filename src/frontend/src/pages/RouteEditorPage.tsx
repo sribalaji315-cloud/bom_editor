@@ -131,8 +131,10 @@ export function RouteEditorPage() {
       resourceGroup: operation.resourceGroup,
       routeGroupId: operation.routeGroupId,
       priority: operation.priority,
-      condition: field === 'condition' ? expression : operation.condition,
-      formula: field === 'formula' ? expression : operation.formula,
+      condition: operation.condition,
+      conditionPlm: field === 'condition' ? expression : operation.conditionPlm,
+      formula: operation.formula,
+      formulaPlm: field === 'formula' ? expression : operation.formulaPlm,
     };
     handleUpdateOperation(operation.id, request);
   };
@@ -274,6 +276,11 @@ export function RouteEditorPage() {
           opened
           context="Route"
           fieldType={translateTarget.field}
+          initialText={
+            (translateTarget.field === 'formula'
+              ? translateTarget.operation.formula
+              : translateTarget.operation.condition) ?? ''
+          }
           onClose={() => setTranslateTarget(null)}
           onApply={applyTranslation}
         />

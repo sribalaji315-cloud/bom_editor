@@ -10,6 +10,7 @@ import type {
   UpdateRouteOperationRequest,
 } from '../../types/route';
 import type { AiFieldType } from '../../types/ai';
+import { LargeTextCellEditor } from '../ui/LargeTextCellEditor';
 
 export type MoveDirection = 'up' | 'down';
 
@@ -45,7 +46,9 @@ function toUpdateRequest(row: RouteOperation): UpdateRouteOperationRequest {
     routeGroupId: row.routeGroupId,
     priority: row.priority,
     condition: row.condition,
+    conditionPlm: row.conditionPlm,
     formula: row.formula,
+    formulaPlm: row.formulaPlm,
   };
   return fields;
 }
@@ -139,8 +142,16 @@ export function RouteOperationsGrid({
         editable: canEdit,
         width: 240,
         cellRenderer: ExpressionCell,
-        cellEditor: 'agLargeTextCellEditor',
-        cellEditorParams: { maxLength: 4000, rows: 8, cols: 60 },
+        cellEditor: LargeTextCellEditor,
+        cellEditorPopup: true,
+      },
+      {
+        field: 'conditionPlm',
+        headerName: t('columns.conditionPlm'),
+        editable: canEdit,
+        width: 240,
+        cellEditor: LargeTextCellEditor,
+        cellEditorPopup: true,
       },
       {
         field: 'formula',
@@ -148,8 +159,16 @@ export function RouteOperationsGrid({
         editable: canEdit,
         width: 240,
         cellRenderer: ExpressionCell,
-        cellEditor: 'agLargeTextCellEditor',
-        cellEditorParams: { maxLength: 4000, rows: 8, cols: 60 },
+        cellEditor: LargeTextCellEditor,
+        cellEditorPopup: true,
+      },
+      {
+        field: 'formulaPlm',
+        headerName: t('columns.formulaPlm'),
+        editable: canEdit,
+        width: 240,
+        cellEditor: LargeTextCellEditor,
+        cellEditorPopup: true,
       },
       {
         headerName: '',

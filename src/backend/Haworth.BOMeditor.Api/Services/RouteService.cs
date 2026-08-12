@@ -310,7 +310,9 @@ public class RouteService(AppDbContext db) : IRouteService
         o.RouteGroupId = f.RouteGroupId;
         o.Priority = f.Priority;
         o.Condition = f.Condition;
+        o.ConditionPlm = f.ConditionPlm;
         o.Formula = f.Formula;
+        o.FormulaPlm = f.FormulaPlm;
     }
 
     private static IEnumerable<(string Field, string? Old, string? New)> DiffOperation(RouteOperation o, RouteOperationFields f)
@@ -329,7 +331,9 @@ public class RouteService(AppDbContext db) : IRouteService
         if (o.RouteGroupId != f.RouteGroupId) yield return (nameof(f.RouteGroupId), o.RouteGroupId, f.RouteGroupId);
         if (o.Priority != f.Priority) yield return (nameof(f.Priority), o.Priority, f.Priority);
         if (o.Condition != f.Condition) yield return (nameof(f.Condition), o.Condition, f.Condition);
+        if (o.ConditionPlm != f.ConditionPlm) yield return (nameof(f.ConditionPlm), o.ConditionPlm, f.ConditionPlm);
         if (o.Formula != f.Formula) yield return (nameof(f.Formula), o.Formula, f.Formula);
+        if (o.FormulaPlm != f.FormulaPlm) yield return (nameof(f.FormulaPlm), o.FormulaPlm, f.FormulaPlm);
     }
 
     // Header identity columns are written only on a route's first row (matching the source layout).
@@ -353,6 +357,8 @@ public class RouteService(AppDbContext db) : IRouteService
         csv.WriteField(op?.Priority ?? string.Empty);
         csv.WriteField(op?.Condition ?? string.Empty);
         csv.WriteField(op?.Formula ?? string.Empty);
+        csv.WriteField(op?.ConditionPlm ?? string.Empty);
+        csv.WriteField(op?.FormulaPlm ?? string.Empty);
     }
 
     private static RouteDetailDto ToDetail(Route route, IReadOnlyList<RouteOperation> operations) => new()
@@ -386,6 +392,8 @@ public class RouteService(AppDbContext db) : IRouteService
         RouteGroupId = o.RouteGroupId,
         Priority = o.Priority,
         Condition = o.Condition,
-        Formula = o.Formula
+        ConditionPlm = o.ConditionPlm,
+        Formula = o.Formula,
+        FormulaPlm = o.FormulaPlm
     };
 }

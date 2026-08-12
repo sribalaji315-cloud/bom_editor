@@ -10,6 +10,7 @@ interface AiTranslateModalProps {
   opened: boolean;
   context: AiContext;
   fieldType: AiFieldType;
+  initialText?: string;
   onClose: () => void;
   onApply: (expression: string) => void;
 }
@@ -23,12 +24,13 @@ export function AiTranslateModal({
   opened,
   context,
   fieldType,
+  initialText,
   onClose,
   onApply,
 }: AiTranslateModalProps) {
   const { t } = useTranslation(['ai']);
   const translate = useTranslateExpression();
-  const [text, setText] = useState('');
+  const [text, setText] = useState(initialText ?? '');
   const [result, setResult] = useState('');
 
   const fieldLabel = fieldType === 'formula' ? t('translate.formula') : t('translate.condition');

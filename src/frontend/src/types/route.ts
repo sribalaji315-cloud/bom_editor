@@ -20,7 +20,9 @@ export interface RouteOperationFields {
   routeGroupId: string | null;
   priority: string | null;
   condition: string | null;
+  conditionPlm: string | null;
   formula: string | null;
+  formulaPlm: string | null;
 }
 
 export interface RouteOperation extends RouteOperationFields {

@@ -43,7 +43,10 @@ public class BomLine
     public bool Phantom { get; set; }
     public string? ReleaseTemplate { get; set; }
     public string? Conditions { get; set; }
+    // AI-translated Bluestar PLM syntax; Conditions holds the natural-language source.
+    public string? ConditionsPlm { get; set; }
     public string? Formula { get; set; }
+    public string? FormulaPlm { get; set; }
     public string? Route { get; set; }
     public string? BomExplosion { get; set; }
     public string? NoOfPiecesInPack { get; set; }

@@ -19,7 +19,9 @@ public record BomLineFields
     public bool Phantom { get; init; }
     public string? ReleaseTemplate { get; init; }
     public string? Conditions { get; init; }
+    public string? ConditionsPlm { get; init; }
     public string? Formula { get; init; }
+    public string? FormulaPlm { get; init; }
     public string? Route { get; init; }
     public string? BomExplosion { get; init; }
     public string? NoOfPiecesInPack { get; init; }

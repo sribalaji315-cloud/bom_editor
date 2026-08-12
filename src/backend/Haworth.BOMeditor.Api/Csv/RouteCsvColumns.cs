@@ -25,12 +25,16 @@ public static class RouteCsvColumns
     public const int Priority = 15;
     public const int RouteCondition = 16;
     public const int RouteFormula = 17;
+    // Appended at the end so fixed-index import of original files stays backward-compatible.
+    public const int RouteConditionPlm = 18;
+    public const int RouteFormulaPlm = 19;
 
     public static readonly string[] Header =
     [
         "ROUTE", "ROUTE NUMBER", "Route name", "OPEARTION NO", "OPEARTION ID",
         "OPEARTION DESCRIPTION", "DESCRIPTION LEN", "NEXT OPERATION", "SWING WC",
         "RUNTIME TYPE", "SET UP TIME", "TIME", "RESOURCE ID", "RESOURCE GROUP",
-        "ROUTE GROUP ID", "PRIORITY", "ROUTE CONDITION", "ROUTE FORMULA"
+        "ROUTE GROUP ID", "PRIORITY", "ROUTE CONDITION", "ROUTE FORMULA",
+        "ROUTE CONDITION (PLM)", "ROUTE FORMULA (PLM)"
     ];
 }
