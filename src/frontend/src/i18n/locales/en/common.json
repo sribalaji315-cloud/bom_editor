@@ -5,9 +5,11 @@
   },
   "nav": {
     "boms": "BOM Documents",
+    "routes": "Routes",
     "admin": "Admin",
     "users": "User Management",
     "releaseTemplates": "Release Templates",
+    "aiSettings": "AI Settings",
     "logout": "Sign out"
   },
   "actions": {

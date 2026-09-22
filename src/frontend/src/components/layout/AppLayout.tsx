@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { AppShell, Badge, Burger, Button, Group, NavLink, ScrollArea, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconFiles, IconLogout, IconTemplate, IconUsers } from '@tabler/icons-react';
+import { IconFiles, IconLogout, IconRoute, IconSparkles, IconTemplate, IconUsers } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -81,6 +81,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
             active={isActive('/')}
             onClick={() => go('/')}
           />
+          <NavLink
+            label={t('nav.routes')}
+            leftSection={<IconRoute size={18} />}
+            active={isActive('/routes')}
+            onClick={() => go('/routes')}
+          />
           {hasRole('Admin') && (
             <NavLink label={t('nav.admin')} defaultOpened>
               <NavLink
@@ -94,6 +100,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 leftSection={<IconTemplate size={18} />}
                 active={isActive('/admin/release-templates')}
                 onClick={() => go('/admin/release-templates')}
+              />
+              <NavLink
+                label={t('nav.aiSettings')}
+                leftSection={<IconSparkles size={18} />}
+                active={isActive('/admin/ai-settings')}
+                onClick={() => go('/admin/ai-settings')}
               />
             </NavLink>
           )}

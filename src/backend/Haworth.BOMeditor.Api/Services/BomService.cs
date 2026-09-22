@@ -409,7 +409,9 @@ public class BomService(AppDbContext db) : IBomService
         Phantom = l.Phantom,
         ReleaseTemplate = l.ReleaseTemplate,
         Conditions = l.Conditions,
+        ConditionsPlm = l.ConditionsPlm,
         Formula = l.Formula,
+        FormulaPlm = l.FormulaPlm,
         Route = l.Route,
         BomExplosion = l.BomExplosion,
         NoOfPiecesInPack = l.NoOfPiecesInPack,
@@ -433,7 +435,9 @@ public class BomService(AppDbContext db) : IBomService
         line.Phantom = f.Phantom;
         line.ReleaseTemplate = f.ReleaseTemplate;
         line.Conditions = f.Conditions;
+        line.ConditionsPlm = f.ConditionsPlm;
         line.Formula = f.Formula;
+        line.FormulaPlm = f.FormulaPlm;
         line.Route = f.Route;
         line.BomExplosion = f.BomExplosion;
         line.NoOfPiecesInPack = f.NoOfPiecesInPack;
@@ -457,7 +461,9 @@ public class BomService(AppDbContext db) : IBomService
         if (line.Phantom != f.Phantom) yield return (nameof(f.Phantom), line.Phantom.ToString(), f.Phantom.ToString());
         if (line.ReleaseTemplate != f.ReleaseTemplate) yield return (nameof(f.ReleaseTemplate), line.ReleaseTemplate, f.ReleaseTemplate);
         if (line.Conditions != f.Conditions) yield return (nameof(f.Conditions), line.Conditions, f.Conditions);
+        if (line.ConditionsPlm != f.ConditionsPlm) yield return (nameof(f.ConditionsPlm), line.ConditionsPlm, f.ConditionsPlm);
         if (line.Formula != f.Formula) yield return (nameof(f.Formula), line.Formula, f.Formula);
+        if (line.FormulaPlm != f.FormulaPlm) yield return (nameof(f.FormulaPlm), line.FormulaPlm, f.FormulaPlm);
         if (line.Route != f.Route) yield return (nameof(f.Route), line.Route, f.Route);
         if (line.BomExplosion != f.BomExplosion) yield return (nameof(f.BomExplosion), line.BomExplosion, f.BomExplosion);
         if (line.NoOfPiecesInPack != f.NoOfPiecesInPack) yield return (nameof(f.NoOfPiecesInPack), line.NoOfPiecesInPack, f.NoOfPiecesInPack);
@@ -486,7 +492,9 @@ public class BomService(AppDbContext db) : IBomService
         Phantom = l.Phantom,
         ReleaseTemplate = l.ReleaseTemplate,
         Conditions = l.Conditions,
+        ConditionsPlm = l.ConditionsPlm,
         Formula = l.Formula,
+        FormulaPlm = l.FormulaPlm,
         Route = l.Route,
         BomExplosion = l.BomExplosion,
         NoOfPiecesInPack = l.NoOfPiecesInPack,

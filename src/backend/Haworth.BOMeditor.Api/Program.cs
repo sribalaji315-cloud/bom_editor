@@ -4,6 +4,7 @@ using Haworth.BOMeditor.Api.Auth;
 using Haworth.BOMeditor.Api.Data;
 using Haworth.BOMeditor.Api.Endpoints;
 using Haworth.BOMeditor.Api.Services;
+using Haworth.BOMeditor.Api.Services.Llm;
 using Haworth.BOMeditor.Core.Enums;
 using Haworth.BOMeditor.Core.Interfaces;
 using Haworth.BOMeditor.Data;
@@ -55,8 +56,19 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddScoped<IBomService, BomService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IReleaseTemplateService, ReleaseTemplateService>();
+builder.Services.AddScoped<IRouteService, RouteService>();
+builder.Services.AddScoped<IRouteImportService, RouteImportService>();
 builder.Services.AddScoped<ICsvImportService, CsvImportService>();
 builder.Services.AddScoped<ICsvExportService, CsvExportService>();
+
+// AI translation: provider API keys are encrypted at rest with Data Protection.
+builder.Services.AddDataProtection();
+builder.Services.AddScoped<IAiSettingsService, AiSettingsService>();
+builder.Services.AddScoped<IAiTranslationService, AiTranslationService>();
+builder.Services.AddScoped<ILlmClientFactory, LlmClientFactory>();
+builder.Services.AddHttpClient<ILlmClient, OpenAiClient>(c => c.Timeout = TimeSpan.FromSeconds(120));
+builder.Services.AddHttpClient<ILlmClient, AnthropicClient>(c => c.Timeout = TimeSpan.FromSeconds(120));
+builder.Services.AddHttpClient<ILlmClient, GeminiClient>(c => c.Timeout = TimeSpan.FromSeconds(120));
 
 // Serialize enums as strings so the frontend receives "Keep"/"Update" rather than numeric values.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -78,7 +90,9 @@ app.MapAuthEndpoints();
 app.MapBomEndpoints();
 app.MapUserEndpoints();
 app.MapReleaseTemplateEndpoints();
+app.MapRouteEndpoints();
 app.MapExportEndpoints();
+app.MapAiEndpoints();
 
 await DbSeeder.SeedAsync(app.Services);
 
