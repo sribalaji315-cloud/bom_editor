@@ -1,8 +1,8 @@
 import { apiClient } from './client';
 import type {
-  BomAuditEntry,
   BomDocumentDetail,
   BomDocumentSummary,
+  BomAuditEntry,
   BomImportMapping,
   ImportInspectResult,
 } from '../types/bom';
@@ -42,11 +42,11 @@ export async function importBomDocument(
   return data;
 }
 
-export async function deleteBomDocument(id: string): Promise<void> {
-  await apiClient.delete(`/boms/${id}`);
-}
-
 export async function exportBomDocument(id: string): Promise<Blob> {
   const { data } = await apiClient.get(`/boms/${id}/export`, { responseType: 'blob' });
   return data as Blob;
+}
+
+export async function deleteBomDocument(id: string): Promise<void> {
+  await apiClient.delete(`/boms/${id}`);
 }

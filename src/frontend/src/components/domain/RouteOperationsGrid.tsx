@@ -78,8 +78,8 @@ function ExpressionCell(params: ICellRendererParams<RouteOperation>) {
   const field: AiFieldType = params.colDef?.field === 'formula' ? 'formula' : 'condition';
   if (!row) return null;
   return (
-    <Group gap={4} wrap="nowrap" justify="space-between" style={{ width: '100%' }}>
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+    <Group gap={4} wrap="nowrap" align="flex-start" justify="space-between" style={{ width: '100%' }}>
+      <span style={{ whiteSpace: 'normal', wordBreak: 'break-word', flex: 1, lineHeight: 1.4 }}>
         {(params.value as string) ?? ''}
       </span>
       {context.canEdit && context.translate && (
@@ -144,6 +144,8 @@ export function RouteOperationsGrid({
         cellRenderer: ExpressionCell,
         cellEditor: LargeTextCellEditor,
         cellEditorPopup: true,
+        wrapText: true,
+        autoHeight: true,
       },
       {
         field: 'conditionPlm',
@@ -152,6 +154,8 @@ export function RouteOperationsGrid({
         width: 240,
         cellEditor: LargeTextCellEditor,
         cellEditorPopup: true,
+        wrapText: true,
+        autoHeight: true,
       },
       {
         field: 'formula',
@@ -161,6 +165,8 @@ export function RouteOperationsGrid({
         cellRenderer: ExpressionCell,
         cellEditor: LargeTextCellEditor,
         cellEditorPopup: true,
+        wrapText: true,
+        autoHeight: true,
       },
       {
         field: 'formulaPlm',
@@ -169,6 +175,8 @@ export function RouteOperationsGrid({
         width: 240,
         cellEditor: LargeTextCellEditor,
         cellEditorPopup: true,
+        wrapText: true,
+        autoHeight: true,
       },
       {
         headerName: '',

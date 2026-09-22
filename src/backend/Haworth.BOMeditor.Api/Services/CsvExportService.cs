@@ -23,7 +23,7 @@ public class CsvExportService(AppDbContext db) : ICsvExportService
         if (!exists) return null;
 
         var lines = await db.BomLines
-            .Where(l => l.BomDocumentId == documentId && !l.IsDeleted)
+            .Where(l => l.BomDocumentId == documentId)
             .ToListAsync(ct);
 
         var childrenByParent = lines
@@ -78,9 +78,7 @@ public class CsvExportService(AppDbContext db) : ICsvExportService
         csv.WriteField(line.Phantom ? "YES" : "NO");
         csv.WriteField(line.ReleaseTemplate ?? string.Empty);
         csv.WriteField(line.Conditions ?? string.Empty);
-        csv.WriteField(line.ConditionsPlm ?? string.Empty);
         csv.WriteField(line.Formula ?? string.Empty);
-        csv.WriteField(line.FormulaPlm ?? string.Empty);
         csv.WriteField(line.Route ?? string.Empty);
         csv.WriteField(line.BomExplosion ?? string.Empty);
         csv.WriteField(line.NoOfPiecesInPack ?? string.Empty);

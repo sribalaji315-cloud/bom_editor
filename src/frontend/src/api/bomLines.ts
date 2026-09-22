@@ -2,9 +2,9 @@ import { apiClient } from './client';
 import type {
   BomLine,
   CreateBomLineRequest,
+  InsertBomRequest,
   UpdateBomLineRequest,
   MoveBomLineRequest,
-  InsertBomRequest,
 } from '../types/bom';
 
 export async function createBomLine(
@@ -32,6 +32,7 @@ export async function restoreBomLine(documentId: string, lineId: string): Promis
   await apiClient.post(`/boms/${documentId}/lines/${lineId}/restore`);
 }
 
+/** Hard-deletes the line and its subtree; unlike deleteBomLine this cannot be undone. */
 export async function purgeBomLine(documentId: string, lineId: string): Promise<void> {
   await apiClient.delete(`/boms/${documentId}/lines/${lineId}/permanent`);
 }

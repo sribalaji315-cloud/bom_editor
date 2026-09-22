@@ -4,7 +4,6 @@ using Haworth.BOMeditor.Api.Auth;
 using Haworth.BOMeditor.Api.Data;
 using Haworth.BOMeditor.Api.Endpoints;
 using Haworth.BOMeditor.Api.Services;
-using Haworth.BOMeditor.Api.Services.Llm;
 using Haworth.BOMeditor.Core.Enums;
 using Haworth.BOMeditor.Core.Interfaces;
 using Haworth.BOMeditor.Data;
@@ -54,21 +53,10 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(UserEndpoints.AdminPolicy, policy => policy.RequireRole(AppRole.Admin));
 
 builder.Services.AddScoped<IBomService, BomService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IReleaseTemplateService, ReleaseTemplateService>();
 builder.Services.AddScoped<ICsvImportService, CsvImportService>();
 builder.Services.AddScoped<ICsvExportService, CsvExportService>();
-builder.Services.AddScoped<IRouteService, RouteService>();
-builder.Services.AddScoped<IRouteImportService, RouteImportService>();
-builder.Services.AddScoped<IReleaseTemplateService, ReleaseTemplateService>();
-builder.Services.AddScoped<IUserService, UserService>();
-
-builder.Services.AddDataProtection();
-builder.Services.AddScoped<IAiSettingsService, AiSettingsService>();
-builder.Services.AddScoped<IAiTranslationService, AiTranslationService>();
-builder.Services.AddScoped<ILlmClientFactory, LlmClientFactory>();
-// Longer timeout: grounded translation calls attach a large reference PDF.
-builder.Services.AddHttpClient<ILlmClient, OpenAiClient>(c => c.Timeout = TimeSpan.FromSeconds(120));
-builder.Services.AddHttpClient<ILlmClient, AnthropicClient>(c => c.Timeout = TimeSpan.FromSeconds(120));
-builder.Services.AddHttpClient<ILlmClient, GeminiClient>(c => c.Timeout = TimeSpan.FromSeconds(120));
 
 // Serialize enums as strings so the frontend receives "Keep"/"Update" rather than numeric values.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -79,14 +67,6 @@ var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod()));
 
-// If the configured port is already in use, fall back to a free port instead of crashing.
-var configuredUrl = builder.Configuration["urls"] ?? "http://localhost:5001";
-var resolvedUrls = configuredUrl
-    .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-    .Select(EnsureAvailablePort)
-    .ToArray();
-builder.WebHost.UseUrls(resolvedUrls);
-
 var app = builder.Build();
 
 app.UseCors();
@@ -96,54 +76,10 @@ app.UseAuthorization();
 app.MapGet("/", () => "Haworth BOM Editor API");
 app.MapAuthEndpoints();
 app.MapBomEndpoints();
-app.MapExportEndpoints();
-app.MapRouteEndpoints();
-app.MapReleaseTemplateEndpoints();
 app.MapUserEndpoints();
-app.MapAiEndpoints();
+app.MapReleaseTemplateEndpoints();
+app.MapExportEndpoints();
 
 await DbSeeder.SeedAsync(app.Services);
 
 app.Run();
-
-// Returns the given url unchanged when its port is free, otherwise swaps in an OS-assigned free port.
-static string EnsureAvailablePort(string url)
-{
-    if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Port == 0)
-    {
-        return url;
-    }
-
-    if (IsPortAvailable(uri.Port))
-    {
-        return url;
-    }
-
-    var freePort = GetFreePort();
-    var builder = new UriBuilder(uri) { Port = freePort };
-    Console.WriteLine($"Port {uri.Port} is in use. Falling back to free port {freePort}: {builder.Uri}");
-    return builder.Uri.ToString();
-}
-
-static bool IsPortAvailable(int port)
-{
-    try
-    {
-        using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, port);
-        listener.Start();
-        return true;
-    }
-    catch (System.Net.Sockets.SocketException)
-    {
-        return false;
-    }
-}
-
-static int GetFreePort()
-{
-    using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
-    listener.Start();
-    var port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
-    listener.Stop();
-    return port;
-}

@@ -23,11 +23,11 @@ public class BomLine
     /// <summary>Order among siblings under the same parent.</summary>
     public int SortOrder { get; set; }
 
-    /// <summary>Soft-delete marker: the line is kept for history but excluded from export.</summary>
-    public bool IsDeleted { get; set; }
-
     /// <summary>Change-set action staged for PLM.</summary>
     public BomAction Action { get; set; } = BomAction.Keep;
+
+    /// <summary>Soft-delete flag; deleted lines stay in the tree but are excluded from export and editing.</summary>
+    public bool IsDeleted { get; set; }
 
     // CSV attribute columns.
     public string? Position { get; set; }
@@ -43,7 +43,6 @@ public class BomLine
     public bool Phantom { get; set; }
     public string? ReleaseTemplate { get; set; }
     public string? Conditions { get; set; }
-    // AI-translated Bluestar PLM syntax; Conditions holds the natural-language source.
     public string? ConditionsPlm { get; set; }
     public string? Formula { get; set; }
     public string? FormulaPlm { get; set; }

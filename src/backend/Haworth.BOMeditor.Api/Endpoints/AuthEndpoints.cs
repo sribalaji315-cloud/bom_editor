@@ -19,6 +19,10 @@ public static class AuthEndpoints
             if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
                 return Results.Unauthorized();
 
+            // Disabled accounts carry a future lockout end and must not be issued a token.
+            if (user.LockoutEnd is { } lockoutEnd && lockoutEnd > DateTimeOffset.UtcNow)
+                return Results.Unauthorized();
+
             var roles = await userManager.GetRolesAsync(user);
             var (token, expiresAt) = tokens.CreateToken(user, roles);
             var dto = new AuthUserDto(user.Id, user.Email ?? string.Empty, user.DisplayName, roles.ToList());

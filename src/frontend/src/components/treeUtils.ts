@@ -51,7 +51,7 @@ export function siblingsOf(lines: BomLine[], line: BomLine): BomLine[] {
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
-/** Ids of a line and all of its descendants; used to forbid moving a line beneath itself. */
+/** The line itself plus every descendant; these are invalid move targets for that line. */
 export function descendantIdsOf(lines: BomLine[], lineId: string): Set<string> {
   const childrenByParent = new Map<string | null, BomLine[]>();
   for (const line of lines) {
@@ -59,10 +59,12 @@ export function descendantIdsOf(lines: BomLine[], lineId: string): Set<string> {
     if (bucket) bucket.push(line);
     else childrenByParent.set(line.parentId, [line]);
   }
+
   const ids = new Set<string>();
   const stack = [lineId];
   while (stack.length > 0) {
     const current = stack.pop()!;
+    if (ids.has(current)) continue;
     ids.add(current);
     for (const child of childrenByParent.get(current) ?? []) stack.push(child.id);
   }

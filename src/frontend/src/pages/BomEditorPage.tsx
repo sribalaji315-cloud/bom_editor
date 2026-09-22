@@ -24,7 +24,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { BomTreeGrid, type MoveDirection } from '../components/domain/BomTreeGrid';
 import { MoveLineModal } from '../components/domain/MoveLineModal';
 import { AddBomModal } from '../components/domain/AddBomModal';
-import { AiTranslateModal } from '../components/domain/AiTranslateModal';
 import { HelpPanel } from '../components/domain/HelpPanel';
 import { siblingsOf } from '../components/treeUtils';
 import { useAuth } from '../context/AuthContext';
@@ -41,7 +40,6 @@ import {
 } from '../hooks/useBomLines';
 import { exportBomDocument } from '../api/boms';
 import type { BomLine, UpdateBomLineRequest } from '../types/bom';
-import type { AiFieldType } from '../types/ai';
 
 export function BomEditorPage() {
   const { t } = useTranslation(['bom', 'common']);
@@ -64,9 +62,6 @@ export function BomEditorPage() {
   const [auditOpen, setAuditOpen] = useState(false);
   const [movingLine, setMovingLine] = useState<BomLine | null>(null);
   const [addBomOpen, setAddBomOpen] = useState(false);
-  const [translateTarget, setTranslateTarget] = useState<{ line: BomLine; field: AiFieldType } | null>(
-    null,
-  );
 
   const lines = document?.lines ?? [];
 
@@ -148,17 +143,6 @@ export function BomEditorPage() {
       },
     );
     setAddBomOpen(false);
-  };
-
-  const applyTranslation = (expression: string) => {
-    if (!translateTarget) return;
-    const { line, field } = translateTarget;
-    const request: UpdateBomLineRequest = {
-      ...line,
-      conditionsPlm: field === 'condition' ? expression : line.conditionsPlm,
-      formulaPlm: field === 'formula' ? expression : line.formulaPlm,
-    };
-    handleUpdate(line.id, request);
   };
 
   const handleMove = async (line: BomLine, direction: MoveDirection) => {
@@ -257,9 +241,6 @@ export function BomEditorPage() {
           onPurge={handlePurge}
           onMove={handleMove}
           onMoveToParent={setMovingLine}
-          onTranslate={
-            canEdit ? (line, field) => setTranslateTarget({ line, field }) : undefined
-          }
         />
       </div>
 
@@ -280,21 +261,6 @@ export function BomEditorPage() {
       />
 
       <HelpPanel opened={helpOpen} onClose={() => setHelpOpen(false)} canEdit={canEdit} />
-
-      {translateTarget && (
-        <AiTranslateModal
-          opened
-          context="Bom"
-          fieldType={translateTarget.field}
-          initialText={
-            (translateTarget.field === 'formula'
-              ? translateTarget.line.formula
-              : translateTarget.line.conditions) ?? ''
-          }
-          onClose={() => setTranslateTarget(null)}
-          onApply={applyTranslation}
-        />
-      )}
 
       <Drawer
         opened={auditOpen}

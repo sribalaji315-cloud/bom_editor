@@ -20,7 +20,6 @@ import {
   IconArrowsMove,
   IconRestore,
   IconTrashX,
-  IconSparkles,
 } from '@tabler/icons-react';
 import { AgGridReact } from 'ag-grid-react';
 import type {
@@ -33,8 +32,6 @@ import type {
 } from 'ag-grid-community';
 import { useTranslation } from 'react-i18next';
 import type { BomLine, BomLineFields, UpdateBomLineRequest } from '../../types/bom';
-import type { AiFieldType } from '../../types/ai';
-import { LargeTextCellEditor } from '../ui/LargeTextCellEditor';
 import { buildVisibleRows } from '../treeUtils';
 
 export type MoveDirection = 'up' | 'down';
@@ -54,9 +51,7 @@ const TOGGLEABLE_COLUMNS: { id: string; labelKey: string }[] = [
   { id: 'phantom', labelKey: 'phantom' },
   { id: 'releaseTemplate', labelKey: 'releaseTemplate' },
   { id: 'conditions', labelKey: 'conditions' },
-  { id: 'conditionsPlm', labelKey: 'conditionsPlm' },
   { id: 'formula', labelKey: 'formula' },
-  { id: 'formulaPlm', labelKey: 'formulaPlm' },
   { id: 'route', labelKey: 'route' },
   { id: 'bomExplosion', labelKey: 'bomExplosion' },
   { id: 'noOfPiecesInPack', labelKey: 'noOfPiecesInPack' },
@@ -75,7 +70,6 @@ interface BomTreeGridProps {
   onPurge: (line: BomLine) => void;
   onMove: (line: BomLine, direction: MoveDirection) => void;
   onMoveToParent: (line: BomLine) => void;
-  onTranslate?: (line: BomLine, field: AiFieldType) => void;
 }
 
 interface GridRow extends BomLine {
@@ -93,7 +87,6 @@ interface GridContext {
   purge: (line: BomLine) => void;
   move: (line: BomLine, direction: MoveDirection) => void;
   moveToParent: (line: BomLine) => void;
-  translate?: (line: BomLine, field: AiFieldType) => void;
 }
 
 function toUpdateRequest(row: GridRow): UpdateBomLineRequest {
@@ -112,9 +105,7 @@ function toUpdateRequest(row: GridRow): UpdateBomLineRequest {
     phantom: row.phantom,
     releaseTemplate: row.releaseTemplate,
     conditions: row.conditions,
-    conditionsPlm: row.conditionsPlm,
     formula: row.formula,
-    formulaPlm: row.formulaPlm,
     route: row.route,
     bomExplosion: row.bomExplosion,
     noOfPiecesInPack: row.noOfPiecesInPack,
@@ -185,35 +176,6 @@ function ActionsCell(params: ICellRendererParams<GridRow>) {
   );
 }
 
-// Natural-language source cell with a sparkle that translates into the adjacent PLM column.
-function ExpressionCell(params: ICellRendererParams<GridRow>) {
-  const row = params.data;
-  const context = params.context as GridContext;
-  const field: AiFieldType = params.colDef?.field === 'formula' ? 'formula' : 'condition';
-  if (!row) return null;
-  return (
-    <Group gap={4} wrap="nowrap" justify="space-between" style={{ width: '100%' }}>
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {(params.value as string) ?? ''}
-      </span>
-      {context.canEdit && context.translate && !row.isDeleted && (
-        <ActionIcon
-          variant="subtle"
-          size="sm"
-          color="nordFrost"
-          aria-label="ai-translate"
-          onClick={(e) => {
-            e.stopPropagation();
-            context.translate?.(row, field);
-          }}
-        >
-          <IconSparkles size={14} />
-        </ActionIcon>
-      )}
-    </Group>
-  );
-}
-
 export function BomTreeGrid({
   lines,
   canEdit,
@@ -225,7 +187,6 @@ export function BomTreeGrid({
   onPurge,
   onMove,
   onMoveToParent,
-  onTranslate,
 }: BomTreeGridProps) {
   const { t } = useTranslation(['bom']);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -347,18 +308,10 @@ export function BomTreeGrid({
         editable: isEditable,
         width: 220,
         hide: hiddenCols.has('conditions'),
-        cellRenderer: ExpressionCell,
-        cellEditor: LargeTextCellEditor,
-        cellEditorPopup: true,
-      },
-      {
-        field: 'conditionsPlm',
-        headerName: t('columns.conditionsPlm'),
-        editable: isEditable,
-        width: 220,
-        hide: hiddenCols.has('conditionsPlm'),
-        cellEditor: LargeTextCellEditor,
-        cellEditorPopup: true,
+        cellEditor: 'agLargeTextCellEditor',
+        cellEditorParams: { maxLength: 4000, rows: 8, cols: 60 },
+        wrapText: true,
+        autoHeight: true,
       },
       {
         field: 'formula',
@@ -366,18 +319,10 @@ export function BomTreeGrid({
         editable: isEditable,
         width: 220,
         hide: hiddenCols.has('formula'),
-        cellRenderer: ExpressionCell,
-        cellEditor: LargeTextCellEditor,
-        cellEditorPopup: true,
-      },
-      {
-        field: 'formulaPlm',
-        headerName: t('columns.formulaPlm'),
-        editable: isEditable,
-        width: 220,
-        hide: hiddenCols.has('formulaPlm'),
-        cellEditor: LargeTextCellEditor,
-        cellEditorPopup: true,
+        cellEditor: 'agLargeTextCellEditor',
+        cellEditorParams: { maxLength: 4000, rows: 8, cols: 60 },
+        wrapText: true,
+        autoHeight: true,
       },
       text('route', 'route', 100),
       text('bomExplosion', 'bomExplosion', 130),
@@ -408,9 +353,8 @@ export function BomTreeGrid({
       purge: onPurge,
       move: onMove,
       moveToParent: onMoveToParent,
-      translate: onTranslate,
     }),
-    [canEdit, toggle, onAddChild, onDelete, onRestore, onPurge, onMove, onMoveToParent, onTranslate],
+    [canEdit, toggle, onAddChild, onDelete, onRestore, onPurge, onMove, onMoveToParent],
   );
 
   const visibleCount = TOGGLEABLE_COLUMNS.length - hiddenCols.size;

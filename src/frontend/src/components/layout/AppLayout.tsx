@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { AppShell, Badge, Burger, Button, Group, NavLink, Text, Title } from '@mantine/core';
+import { AppShell, Badge, Burger, Button, Group, NavLink, ScrollArea, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconLayoutList, IconLogout, IconRoute, IconSparkles, IconTemplate, IconUsers } from '@tabler/icons-react';
+import { IconFiles, IconLogout, IconTemplate, IconUsers } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -11,7 +11,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [mobileOpened, { toggle: toggleMobile }] = useDisclosure(false);
+  const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure();
   const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
 
   const handleLogout = () => {
@@ -19,17 +19,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
     navigate('/login');
   };
 
-  const isRoutes = location.pathname.startsWith('/routes');
-  const isTemplates = location.pathname.startsWith('/admin/release-templates');
-  const isUsers = location.pathname.startsWith('/admin/users');
-  const isAiSettings = location.pathname.startsWith('/admin/ai-settings');
-  const isBoms = !isRoutes && !isTemplates && !isUsers && !isAiSettings;
+  const go = (path: string) => {
+    navigate(path);
+    closeMobile();
+  };
+
+  const isActive = (path: string) =>
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
   return (
     <AppShell
       header={{ height: 60 }}
       navbar={{
-        width: 240,
+        width: 260,
         breakpoint: 'sm',
         collapsed: { mobile: !mobileOpened, desktop: !desktopOpened },
       }}
@@ -40,7 +42,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <Group gap="sm">
             <Burger opened={mobileOpened} onClick={toggleMobile} hiddenFrom="sm" size="sm" />
             <Burger opened={desktopOpened} onClick={toggleDesktop} visibleFrom="sm" size="sm" />
-            <Group gap="xs" style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
+            <Group gap="xs" style={{ cursor: 'pointer' }} onClick={() => go('/')}>
               <Title order={4} c="nordBlue.6">
                 {t('app.title')}
               </Title>
@@ -70,44 +72,34 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Group>
         </Group>
       </AppShell.Header>
-      <AppShell.Navbar p="sm">
-        <NavLink
-          label={t('nav.boms')}
-          leftSection={<IconLayoutList size={18} />}
-          active={isBoms}
-          onClick={() => navigate('/')}
-        />
-        <NavLink
-          label={t('nav.routes')}
-          leftSection={<IconRoute size={18} />}
-          active={isRoutes}
-          onClick={() => navigate('/routes')}
-        />
-        {hasRole('Admin') && (
+
+      <AppShell.Navbar p="xs">
+        <AppShell.Section grow component={ScrollArea}>
           <NavLink
-            label={t('nav.releaseTemplates')}
-            leftSection={<IconTemplate size={18} />}
-            active={isTemplates}
-            onClick={() => navigate('/admin/release-templates')}
+            label={t('nav.boms')}
+            leftSection={<IconFiles size={18} />}
+            active={isActive('/')}
+            onClick={() => go('/')}
           />
-        )}
-        {hasRole('Admin') && (
-          <NavLink
-            label={t('nav.users')}
-            leftSection={<IconUsers size={18} />}
-            active={isUsers}
-            onClick={() => navigate('/admin/users')}
-          />
-        )}
-        {hasRole('Admin') && (
-          <NavLink
-            label={t('nav.aiSettings')}
-            leftSection={<IconSparkles size={18} />}
-            active={isAiSettings}
-            onClick={() => navigate('/admin/ai-settings')}
-          />
-        )}
+          {hasRole('Admin') && (
+            <NavLink label={t('nav.admin')} defaultOpened>
+              <NavLink
+                label={t('nav.users')}
+                leftSection={<IconUsers size={18} />}
+                active={isActive('/admin/users')}
+                onClick={() => go('/admin/users')}
+              />
+              <NavLink
+                label={t('nav.releaseTemplates')}
+                leftSection={<IconTemplate size={18} />}
+                active={isActive('/admin/release-templates')}
+                onClick={() => go('/admin/release-templates')}
+              />
+            </NavLink>
+          )}
+        </AppShell.Section>
       </AppShell.Navbar>
+
       <AppShell.Main>{children}</AppShell.Main>
     </AppShell>
   );

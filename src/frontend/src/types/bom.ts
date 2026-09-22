@@ -15,9 +15,7 @@ export interface BomLineFields {
   phantom: boolean;
   releaseTemplate: string | null;
   conditions: string | null;
-  conditionsPlm: string | null;
   formula: string | null;
-  formulaPlm: string | null;
   route: string | null;
   bomExplosion: string | null;
   noOfPiecesInPack: string | null;

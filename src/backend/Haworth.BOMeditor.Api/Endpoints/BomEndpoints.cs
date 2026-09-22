@@ -69,13 +69,7 @@ public static class BomEndpoints
             await using var stream = file.OpenReadStream();
             try
             {
-                var summary = await import.ImportAsync(
-                    stream,
-                    file.FileName,
-                    name,
-                    new BomImportMapping(mapping),
-                    ctx.User.ToUserContext(),
-                    ct);
+                var summary = await import.ImportAsync(stream, file.FileName, name, mapping, ctx.User.ToUserContext(), ct);
                 return Results.Created($"/api/boms/{summary.Id}", summary);
             }
             catch (InvalidOperationException ex) { return Results.BadRequest(ex.Message); }

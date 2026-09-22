@@ -13,10 +13,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<BomDocument> BomDocuments => Set<BomDocument>();
     public DbSet<BomLine> BomLines => Set<BomLine>();
     public DbSet<BomAuditEntry> BomAuditEntries => Set<BomAuditEntry>();
+    public DbSet<ReleaseTemplate> ReleaseTemplates => Set<ReleaseTemplate>();
     public DbSet<Route> Routes => Set<Route>();
     public DbSet<RouteOperation> RouteOperations => Set<RouteOperation>();
     public DbSet<RouteAuditEntry> RouteAuditEntries => Set<RouteAuditEntry>();
-    public DbSet<ReleaseTemplate> ReleaseTemplates => Set<ReleaseTemplate>();
     public DbSet<AiProviderConfig> AiProviderConfigs => Set<AiProviderConfig>();
     public DbSet<AiInstruction> AiInstructions => Set<AiInstruction>();
     public DbSet<AiSetting> AiSettings => Set<AiSetting>();
@@ -60,6 +60,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasIndex(a => a.BomDocumentId);
         });
 
+        builder.Entity<ReleaseTemplate>(e =>
+        {
+            e.HasKey(t => t.Id);
+            e.Property(t => t.Name).IsRequired().HasMaxLength(128);
+            e.HasIndex(t => t.Name).IsUnique();
+        });
+
         builder.Entity<Route>(e =>
         {
             e.HasKey(r => r.Id);
@@ -84,18 +91,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasIndex(a => a.RouteId);
         });
 
-        builder.Entity<ReleaseTemplate>(e =>
-        {
-            e.HasKey(t => t.Id);
-            e.Property(t => t.Name).IsRequired().HasMaxLength(128);
-            e.HasIndex(t => t.Name).IsUnique();
-        });
-
         builder.Entity<AiProviderConfig>(e =>
         {
             e.HasKey(c => c.Id);
             e.Property(c => c.Provider).HasConversion<string>().HasMaxLength(32);
-            e.Property(c => c.Model).HasMaxLength(128);
+            e.Property(c => c.Model).IsRequired().HasMaxLength(128);
             e.HasIndex(c => c.Provider).IsUnique();
         });
 
@@ -103,6 +103,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             e.HasKey(i => i.Id);
             e.Property(i => i.Context).HasConversion<string>().HasMaxLength(16);
+            e.Property(i => i.SystemInstructions).IsRequired();
             e.HasIndex(i => i.Context).IsUnique();
         });
 

@@ -19,9 +19,7 @@ public record BomLineFields
     public bool Phantom { get; init; }
     public string? ReleaseTemplate { get; init; }
     public string? Conditions { get; init; }
-    public string? ConditionsPlm { get; init; }
     public string? Formula { get; init; }
-    public string? FormulaPlm { get; init; }
     public string? Route { get; init; }
     public string? BomExplosion { get; init; }
     public string? NoOfPiecesInPack { get; init; }
@@ -36,7 +34,7 @@ public record BomLineDto : BomLineFields
     public int SortOrder { get; init; }
     /// <summary>1-based tree depth, used for indentation and level column export.</summary>
     public int Level { get; init; }
-    /// <summary>Soft-deleted lines are shown struck-through and omitted from export.</summary>
+    /// <summary>Read-only; changed through delete/restore, not through update requests.</summary>
     public bool IsDeleted { get; init; }
 }
 
@@ -71,7 +69,7 @@ public record UpdateBomLineRequest : BomLineFields;
 /// <summary>Reparent and/or reorder a line.</summary>
 public record MoveBomLineRequest(Guid? ParentId, int SortOrder);
 
-/// <summary>Insert copies of selected lines (each with its subtree) from another BOM under an optional parent.</summary>
+/// <summary>Copy selected lines (with their subtrees) from another document under an optional parent.</summary>
 public record InsertBomRequest(Guid SourceDocumentId, Guid? ParentId, IReadOnlyList<Guid> LineIds);
 
 public record BomAuditEntryDto(

@@ -1,4 +1,3 @@
-using Haworth.BOMeditor.Core.Domain;
 using Haworth.BOMeditor.Core.Enums;
 using Haworth.BOMeditor.Data;
 using Haworth.BOMeditor.Data.Identity;
@@ -44,64 +43,5 @@ public static class DbSeeder
             if (result.Succeeded)
                 await userManager.AddToRoleAsync(user, role);
         }
-
-        await SeedAiDefaultsAsync(db);
-    }
-
-    private static async Task SeedAiDefaultsAsync(AppDbContext db)
-    {
-        var now = DateTimeOffset.UtcNow;
-
-        if (!await db.AiSettings.AnyAsync())
-        {
-            db.AiSettings.Add(new AiSetting
-            {
-                Id = Guid.NewGuid(),
-                ActiveProvider = AiProvider.OpenAI,
-                GroundingEnabled = true
-            });
-        }
-
-        var defaultModels = new Dictionary<AiProvider, string>
-        {
-            [AiProvider.OpenAI] = "gpt-4o",
-            [AiProvider.Anthropic] = "claude-3-5-sonnet-latest",
-            [AiProvider.Gemini] = "gemini-1.5-pro"
-        };
-        foreach (var (provider, model) in defaultModels)
-        {
-            if (await db.AiProviderConfigs.AnyAsync(c => c.Provider == provider)) continue;
-            db.AiProviderConfigs.Add(new AiProviderConfig
-            {
-                Id = Guid.NewGuid(),
-                Provider = provider,
-                Model = model,
-                Enabled = false,
-                UpdatedAt = now
-            });
-        }
-
-        var defaultInstructions = new Dictionary<AiContext, string>
-        {
-            [AiContext.Bom] =
-                "Context: BOM line conditions and formulas. Conditions gate whether a line is included; " +
-                "formulas compute quantities. Prefer the ECO/configurator variables shown in the reference guide.",
-            [AiContext.Route] =
-                "Context: route operation conditions and formulas. Conditions gate whether an operation runs; " +
-                "formulas compute times or quantities. Use the operation-level variables shown in the reference guide."
-        };
-        foreach (var (context, text) in defaultInstructions)
-        {
-            if (await db.AiInstructions.AnyAsync(i => i.Context == context)) continue;
-            db.AiInstructions.Add(new AiInstruction
-            {
-                Id = Guid.NewGuid(),
-                Context = context,
-                SystemInstructions = text,
-                UpdatedAt = now
-            });
-        }
-
-        await db.SaveChangesAsync();
     }
 }

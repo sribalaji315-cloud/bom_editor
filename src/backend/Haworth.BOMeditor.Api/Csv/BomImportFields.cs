@@ -55,19 +55,13 @@ public static class BomImportFields
     {
         var normalized = headers.Select(Normalize).ToArray();
         var map = new Dictionary<string, int>();
-        var usedIndexes = new HashSet<int>();
-
         foreach (var field in All)
         {
             for (var i = 0; i < normalized.Length; i++)
             {
-                if (usedIndexes.Contains(i))
-                    continue;
-
                 if (field.Aliases.Contains(normalized[i]))
                 {
                     map[field.Key] = i;
-                    usedIndexes.Add(i);
                     break;
                 }
             }

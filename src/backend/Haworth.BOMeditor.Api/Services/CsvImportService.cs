@@ -11,45 +11,45 @@ using Haworth.BOMeditor.Data;
 namespace Haworth.BOMeditor.Api.Services;
 
 /// <summary>
-/// Parses an mBOM CSV into a new BOM document. The tree is reconstructed from the level1-8
-/// columns: exactly one level column per data row holds a value and its column index is the depth.
+/// Parses an mBOM CSV into a new BOM document. Flat fields are read from user-mapped source
+/// columns; the tree is reconstructed from the level1..level8 columns detected by header
+/// (exactly one level column per data row holds a value and its number is the depth).
 /// </summary>
 public class CsvImportService(AppDbContext db) : ICsvImportService
 {
+    private static CsvConfiguration Config => new(CultureInfo.InvariantCulture)
+    {
+        HasHeaderRecord = true,
+        MissingFieldFound = null,
+        BadDataFound = null,
+        TrimOptions = TrimOptions.Trim
+    };
+
     public async Task<ImportInspectResult> InspectAsync(Stream csv, CancellationToken ct = default)
     {
-        var config = CreateCsvConfiguration();
-
         using var reader = new StreamReader(csv);
-        using var parser = new CsvParser(reader, config);
+        using var parser = new CsvParser(reader, Config);
 
         if (!await parser.ReadAsync() || parser.Record is null)
-            throw new InvalidOperationException("CSV file is empty.");
+            throw new InvalidOperationException("The CSV file has no header row.");
 
         var headers = parser.Record;
-        var columns = headers
-            .Select((header, index) => new ImportColumnDto(index, header))
-            .ToList();
+        var columns = headers.Select((h, i) => new ImportColumnDto(i, h)).ToList();
+        var suggested = BomImportFields.SuggestMapping(headers);
 
         var sampleRows = new List<IReadOnlyList<string>>();
-        for (var i = 0; i < 5 && await parser.ReadAsync(); i++)
+        while (sampleRows.Count < 5 && await parser.ReadAsync())
         {
-            sampleRows.Add((parser.Record ?? Array.Empty<string>()).ToArray());
+            if (parser.Record is { } row) sampleRows.Add(row.ToList());
         }
 
-        return new ImportInspectResult(
-            columns,
-            BomImportFields.ToDtos(),
-            BomImportFields.SuggestMapping(headers),
-            sampleRows);
+        return new ImportInspectResult(columns, BomImportFields.ToDtos(), suggested, sampleRows);
     }
 
     public async Task<BomDocumentSummaryDto> ImportAsync(
-        Stream csv, string fileName, string documentName, BomImportMapping mapping, UserContext user, CancellationToken ct = default)
+        Stream csv, string fileName, string documentName,
+        IReadOnlyDictionary<string, int> mapping, UserContext user, CancellationToken ct = default)
     {
-        if (mapping.Fields is null)
-            throw new InvalidOperationException("A column mapping is required.");
-
         var now = DateTimeOffset.UtcNow;
         var document = new BomDocument
         {
@@ -61,18 +61,19 @@ public class CsvImportService(AppDbContext db) : ICsvImportService
             CreatedBy = user.UserName
         };
 
-        var config = CreateCsvConfiguration();
-
         using var reader = new StreamReader(csv);
-        using var parser = new CsvParser(reader, config);
+        using var parser = new CsvParser(reader, Config);
 
         if (!await parser.ReadAsync() || parser.Record is null)
-            throw new InvalidOperationException("CSV file is empty.");
+            throw new InvalidOperationException("The CSV file has no header row.");
 
-        var headers = parser.Record;
-        var levelColumns = BomImportFields.LevelColumns(headers);
-        EnsureMappingIsValid(mapping.Fields, levelColumns.Count > 0);
+        var levelColumns = BomImportFields.LevelColumns(parser.Record);
+        var hasDepthColumn = mapping.TryGetValue(BomImportFields.DepthKey, out var depthColumn);
+        if (levelColumns.Count == 0 && !hasDepthColumn)
+            throw new InvalidOperationException(
+                "No hierarchy found. Map a Level/Depth column, or use a file with level1..level8 columns.");
 
+        // lastAtDepth[d] is the most recent line created at depth d (1-based), used to find parents.
         var lastAtDepth = new Dictionary<int, BomLine>();
         var siblingCounter = new Dictionary<Guid, int>(); // parentId -> next sort order
         var rootCounter = 0;
@@ -83,10 +84,12 @@ public class CsvImportService(AppDbContext db) : ICsvImportService
             var record = parser.Record;
             if (record is null) continue;
 
-            var depth = ResolveDepth(record, mapping.Fields, levelColumns);
-            if (depth == 0) continue; // fully empty / non-structural row
+            var depth = hasDepthColumn
+                ? ParseDepth(record, depthColumn)
+                : ResolveDepth(record, levelColumns);
+            if (depth <= 0) continue; // fully empty / non-structural row
 
-            lastAtDepth.TryGetValue(depth - 1, out var parent);
+            var parent = depth > 1 && lastAtDepth.TryGetValue(depth - 1, out var ancestor) ? ancestor : null;
 
             int sortOrder;
             if (parent is null)
@@ -106,34 +109,33 @@ public class CsvImportService(AppDbContext db) : ICsvImportService
                 BomDocumentId = document.Id,
                 ParentId = parent?.Id,
                 SortOrder = sortOrder,
-                Action = ParseAction(Field(record, mapping.Fields, "action")),
-                Position = Field(record, mapping.Fields, "position"),
-                BsObjectId = Field(record, mapping.Fields, "bsObjectId"),
-                LegacySwingId = Field(record, mapping.Fields, "legacySwingId"),
-                DrawingNo = Field(record, mapping.Fields, "drawingNo"),
-                Description = Field(record, mapping.Fields, "description"),
-                FinalQuantity = Field(record, mapping.Fields, "finalQuantity"),
-                Constant = Field(record, mapping.Fields, "constant"),
-                Class = Field(record, mapping.Fields, "class"),
-                Uom = Field(record, mapping.Fields, "uom"),
-                IsEbom = ParseYesNo(Field(record, mapping.Fields, "isEbom")),
-                Phantom = ParseYesNo(Field(record, mapping.Fields, "phantom")),
-                ReleaseTemplate = Field(record, mapping.Fields, "releaseTemplate"),
-                Conditions = Field(record, mapping.Fields, "conditions"),
-                Formula = Field(record, mapping.Fields, "formula"),
-                Route = Field(record, mapping.Fields, "route"),
-                BomExplosion = Field(record, mapping.Fields, "bomExplosion"),
-                NoOfPiecesInPack = Field(record, mapping.Fields, "noOfPiecesInPack"),
-                WeightKg = Field(record, mapping.Fields, "weightKg"),
-                VolumeM3 = Field(record, mapping.Fields, "volumeM3")
+                Action = ParseAction(Mapped(record, mapping, "action")),
+                Position = Mapped(record, mapping, "position"),
+                BsObjectId = Mapped(record, mapping, "bsObjectId"),
+                LegacySwingId = Mapped(record, mapping, "legacySwingId"),
+                DrawingNo = Mapped(record, mapping, "drawingNo"),
+                Description = Mapped(record, mapping, "description"),
+                FinalQuantity = Mapped(record, mapping, "finalQuantity"),
+                Constant = Mapped(record, mapping, "constant"),
+                Class = Mapped(record, mapping, "class"),
+                Uom = Mapped(record, mapping, "uom"),
+                IsEbom = ParseYesNo(Mapped(record, mapping, "isEbom")),
+                Phantom = ParseYesNo(Mapped(record, mapping, "phantom")),
+                ReleaseTemplate = Mapped(record, mapping, "releaseTemplate"),
+                Conditions = Mapped(record, mapping, "conditions"),
+                Formula = Mapped(record, mapping, "formula"),
+                Route = Mapped(record, mapping, "route"),
+                BomExplosion = Mapped(record, mapping, "bomExplosion"),
+                NoOfPiecesInPack = Mapped(record, mapping, "noOfPiecesInPack"),
+                WeightKg = Mapped(record, mapping, "weightKg"),
+                VolumeM3 = Mapped(record, mapping, "volumeM3")
             };
 
             lines.Add(line);
             lastAtDepth[depth] = line;
-            // Reset deeper markers so a shallower row cannot inherit a stale deep parent.
-            var deeperKeys = lastAtDepth.Keys.Where(d => d > depth).ToList();
-            foreach (var deeperKey in deeperKeys)
-                lastAtDepth.Remove(deeperKey);
+            // Drop any deeper markers so a shallower row cannot inherit a stale deep parent.
+            foreach (var d in lastAtDepth.Keys.Where(k => k > depth).ToList())
+                lastAtDepth.Remove(d);
         }
 
         document.Lines = lines;
@@ -158,58 +160,33 @@ public class CsvImportService(AppDbContext db) : ICsvImportService
             document.CreatedAt, document.CreatedBy, document.UpdatedAt);
     }
 
-    private static CsvConfiguration CreateCsvConfiguration() => new(CultureInfo.InvariantCulture)
+    /// <summary>Depth = number of the first level column (ascending) that holds a value, or 0.</summary>
+    private static int ResolveDepth(string[] record, IReadOnlyList<(int Depth, int Index)> levelColumns)
     {
-        HasHeaderRecord = true,
-        MissingFieldFound = null,
-        BadDataFound = null,
-        TrimOptions = TrimOptions.Trim
-    };
-
-    /// <summary>Depth = index (1..8) of the first non-empty level column, or 0 if none.</summary>
-    private static int ResolveDepth(
-        string[] record,
-        IReadOnlyDictionary<string, int> mapping,
-        IReadOnlyList<(int Depth, int Index)> levelColumns)
-    {
-        if (mapping.TryGetValue(BomImportFields.DepthKey, out var depthIndex))
-        {
-            var depthValue = Field(record, depthIndex);
-            return int.TryParse(depthValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var depth) && depth > 0
-                ? depth
-                : 0;
-        }
-
         foreach (var (depth, index) in levelColumns)
         {
             if (index < record.Length && !string.IsNullOrWhiteSpace(record[index]))
                 return depth;
         }
-
         return 0;
     }
 
-    private static void EnsureMappingIsValid(IReadOnlyDictionary<string, int> mapping, bool hasLevelColumns)
+    /// <summary>Depth read from a single numeric level column, or 0 if empty/non-numeric.</summary>
+    private static int ParseDepth(string[] record, int index)
     {
-        foreach (var field in BomImportFields.All.Where(field => field.Required))
-        {
-            if (!mapping.ContainsKey(field.Key))
-                throw new InvalidOperationException($"Missing required mapping for '{field.Key}'.");
-        }
-
-        if (!mapping.ContainsKey(BomImportFields.DepthKey) && !hasLevelColumns)
-            throw new InvalidOperationException("Map a depth column or provide level1..level8 columns.");
+        if (index < 0 || index >= record.Length) return 0;
+        var value = record[index]?.Trim();
+        if (string.IsNullOrEmpty(value)) return 0;
+        if (int.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var d)) return d;
+        if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var dd)) return (int)dd;
+        return 0;
     }
 
-    private static string? Field(string[] record, IReadOnlyDictionary<string, int> mapping, string key)
+    /// <summary>Read the mapped source column for a field, or null if unmapped/empty/out of range.</summary>
+    private static string? Mapped(string[] record, IReadOnlyDictionary<string, int> mapping, string fieldKey)
     {
-        if (!mapping.TryGetValue(key, out var index)) return null;
-        return Field(record, index);
-    }
-
-    private static string? Field(string[] record, int index)
-    {
-        if (index >= record.Length) return null;
+        if (!mapping.TryGetValue(fieldKey, out var index) || index < 0 || index >= record.Length)
+            return null;
         var value = record[index];
         return string.IsNullOrWhiteSpace(value) ? null : value;
     }

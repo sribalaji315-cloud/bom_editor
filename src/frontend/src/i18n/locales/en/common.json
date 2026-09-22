@@ -5,10 +5,9 @@
   },
   "nav": {
     "boms": "BOM Documents",
-    "routes": "Routes",
-    "releaseTemplates": "Release Templates",
+    "admin": "Admin",
     "users": "User Management",
-    "aiSettings": "AI Settings",
+    "releaseTemplates": "Release Templates",
     "logout": "Sign out"
   },
   "actions": {

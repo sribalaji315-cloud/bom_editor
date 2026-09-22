@@ -1,7 +1,7 @@
 namespace Haworth.BOMeditor.Api.Csv;
 
 /// <summary>
-/// Ordered header for the mBOM CSV layout (30 columns). Import reads by index and export
+/// Ordered header for the mBOM CSV layout (28 columns). Import reads by index and export
 /// re-emits this exact order so files round-trip.
 /// </summary>
 public static class BomCsvColumns
@@ -22,21 +22,19 @@ public static class BomCsvColumns
     public const int Phantom = 19;
     public const int ReleaseTemplate = 20;
     public const int Conditions = 21;
-    public const int ConditionsPlm = 22;
-    public const int Formula = 23;
-    public const int FormulaPlm = 24;
-    public const int Route = 25;
-    public const int BomExplosion = 26;
-    public const int NoOfPiecesInPack = 27;
-    public const int WeightKg = 28;
-    public const int VolumeM3 = 29;
+    public const int Formula = 22;
+    public const int Route = 23;
+    public const int BomExplosion = 24;
+    public const int NoOfPiecesInPack = 25;
+    public const int WeightKg = 26;
+    public const int VolumeM3 = 27;
 
     public static readonly string[] Header =
     [
         "Action", "level1", "level2", "level3", "level4", "level5", "level6", "level7", "level8",
         "Position", "BS Object ID", "Legacy Swing ID", "Drawing No.", "Description",
         "Final Quantity", "CONSTANT", "Class", "UoM", "IS EBOM", "PHANTOM", "Release Template",
-        "Conditions", "Conditions (PLM)", "Formula", "Formula (PLM)", "Route", "BOM Explosion",
-        "No of Pieces in Pack", "Weight in Kg\n(per unit)", "Volume in m3\n(per Box)"
+        "Conditions", "Formula", "Route", "BOM Explosion", "No of Pieces in Pack",
+        "Weight in Kg\n(per unit)", "Volume in m3\n(per Box)"
     ];
 }

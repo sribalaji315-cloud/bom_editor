@@ -4,11 +4,8 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { BomListPage } from './pages/BomListPage';
 import { BomEditorPage } from './pages/BomEditorPage';
-import { RouteListPage } from './pages/RouteListPage';
-import { RouteEditorPage } from './pages/RouteEditorPage';
-import { ReleaseTemplatesPage } from './pages/ReleaseTemplatesPage';
 import { UserManagementPage } from './pages/UserManagementPage';
-import { AiSettingsPage } from './pages/AiSettingsPage';
+import { ReleaseTemplatesPage } from './pages/ReleaseTemplatesPage';
 
 function App() {
   return (
@@ -35,36 +32,6 @@ function App() {
         }
       />
       <Route
-        path="/routes"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <RouteListPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/routes/:id"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <RouteEditorPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/release-templates"
-        element={
-          <ProtectedRoute roles={['Admin']}>
-            <AppLayout>
-              <ReleaseTemplatesPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/admin/users"
         element={
           <ProtectedRoute roles={['Admin']}>
@@ -75,11 +42,11 @@ function App() {
         }
       />
       <Route
-        path="/admin/ai-settings"
+        path="/admin/release-templates"
         element={
           <ProtectedRoute roles={['Admin']}>
             <AppLayout>
-              <AiSettingsPage />
+              <ReleaseTemplatesPage />
             </AppLayout>
           </ProtectedRoute>
         }
