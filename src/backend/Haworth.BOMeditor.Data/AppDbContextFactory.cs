@@ -11,7 +11,7 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
     public AppDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite("Data Source=classification_tool.db")
+            .UseSqlite("Data Source=bom_editor.db")
             .Options;
         return new AppDbContext(options);
     }

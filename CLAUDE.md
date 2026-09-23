@@ -77,7 +77,7 @@ The following areas require a design discussion **before writing any code**:
 Four roles seeded at startup. JWT (HS256) with claims for id, email, name, and roles. Frontend `ProtectedRoute` checks `hasRole()` before rendering.
 
 ### Database
-SQLite for local development. Connection: `Data Source=classification_tool.db`. EF Core Identity tables + app tables with restrict-delete foreign keys.
+SQLite for local development. Connection: `Data Source=bom_editor.db`. EF Core Identity tables + app tables with restrict-delete foreign keys.
 
 ## Frontend Structure
 
