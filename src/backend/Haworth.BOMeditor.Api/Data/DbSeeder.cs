@@ -47,6 +47,56 @@ public static class DbSeeder
 
         await SeedAiDefaultsAsync(db);
         await SeedValidationRulesAsync(db);
+        await SeedOperationsAsync(db);
+    }
+
+    /// <summary>
+    /// One-time backfill of the operation master data from the operation IDs already used by existing
+    /// routes, so every imported route operation still resolves in the picker.
+    /// </summary>
+    private static async Task SeedOperationsAsync(AppDbContext db)
+    {
+        if (await db.Operations.AnyAsync()) return;
+
+        var existing = await db.RouteOperations
+            .Where(o => o.OperationId != null && o.OperationId != "")
+            .Select(o => new { o.OperationId, o.Description })
+            .ToListAsync();
+
+        var now = DateTimeOffset.UtcNow;
+        var seen = new Dictionary<string, Operation>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in existing)
+        {
+            var code = row.OperationId!.Trim();
+            if (code.Length == 0) continue;
+
+            if (!seen.TryGetValue(code, out var operation))
+            {
+                operation = new Operation
+                {
+                    Id = Guid.NewGuid(),
+                    Code = code,
+                    Description = string.Empty,
+                    Status = OperationStatus.Approved,
+                    IsActive = true,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                };
+                seen.Add(code, operation);
+            }
+
+            // First non-empty description wins; the code itself is the fallback so the column stays required.
+            if (operation.Description.Length == 0 && !string.IsNullOrWhiteSpace(row.Description))
+                operation.Description = row.Description.Trim();
+        }
+
+        foreach (var operation in seen.Values)
+        {
+            if (operation.Description.Length == 0) operation.Description = operation.Code;
+            db.Operations.Add(operation);
+        }
+
+        if (seen.Count > 0) await db.SaveChangesAsync();
     }
 
     /// <summary>

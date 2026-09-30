@@ -17,6 +17,11 @@ export const queryKeys = {
     all: ['release-templates'] as const,
     lists: () => [...queryKeys.releaseTemplates.all, 'list'] as const,
   },
+  operations: {
+    all: ['operations'] as const,
+    lists: () => [...queryKeys.operations.all, 'list'] as const,
+    selectable: () => [...queryKeys.operations.all, 'selectable'] as const,
+  },
   validation: {
     all: ['validation'] as const,
     rules: () => [...queryKeys.validation.all, 'rules'] as const,

@@ -6,6 +6,7 @@ import { BomListPage } from './pages/BomListPage';
 import { BomEditorPage } from './pages/BomEditorPage';
 import { RouteListPage } from './pages/RouteListPage';
 import { RouteEditorPage } from './pages/RouteEditorPage';
+import { OperationsPage } from './pages/OperationsPage';
 import { UserManagementPage } from './pages/UserManagementPage';
 import { ReleaseTemplatesPage } from './pages/ReleaseTemplatesPage';
 import { ValidationRulesPage } from './pages/ValidationRulesPage';
@@ -51,6 +52,16 @@ function App() {
           <ProtectedRoute>
             <AppLayout>
               <RouteEditorPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/operations"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <OperationsPage />
             </AppLayout>
           </ProtectedRoute>
         }

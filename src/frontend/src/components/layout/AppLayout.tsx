@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { AppShell, Badge, Burger, Button, Group, NavLink, ScrollArea, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconFiles, IconListCheck, IconLogout, IconRoute, IconSparkles, IconTemplate, IconUsers } from '@tabler/icons-react';
+import { IconFiles, IconListCheck, IconLogout, IconRoute, IconSparkles, IconTemplate, IconTool, IconUsers } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -86,6 +86,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
             leftSection={<IconRoute size={18} />}
             active={isActive('/routes')}
             onClick={() => go('/routes')}
+          />
+          <NavLink
+            label={t('nav.operations')}
+            leftSection={<IconTool size={18} />}
+            active={isActive('/operations')}
+            onClick={() => go('/operations')}
           />
           {hasRole('Admin') && (
             <NavLink label={t('nav.admin')} defaultOpened>

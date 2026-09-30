@@ -6,6 +6,7 @@
   "nav": {
     "boms": "BOM Documents",
     "routes": "Routes",
+    "operations": "Operations",
     "admin": "Admin",
     "users": "User Management",
     "releaseTemplates": "Release Templates",

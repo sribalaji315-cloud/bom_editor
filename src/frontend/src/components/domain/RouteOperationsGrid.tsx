@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { ActionIcon, Group } from '@mantine/core';
 import { IconArrowDown, IconArrowUp, IconSparkles, IconTrash } from '@tabler/icons-react';
 import { AgGridReact } from 'ag-grid-react';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import type { CellValueChangedEvent, ColDef, ICellRendererParams } from 'ag-grid-community';
 import { useTranslation } from 'react-i18next';
 import type {
   RouteOperation,
@@ -10,21 +10,27 @@ import type {
   UpdateRouteOperationRequest,
 } from '../../types/route';
 import type { AiFieldType } from '../../types/ai';
+import type { OperationOption } from '../../types/operation';
 import { LargeTextCellEditor } from '../ui/LargeTextCellEditor';
+import { OperationCellEditor } from '../ui/OperationCellEditor';
 
 export type MoveDirection = 'up' | 'down';
 
 interface RouteOperationsGridProps {
   operations: RouteOperation[];
   canEdit: boolean;
+  operationOptions: OperationOption[];
   onUpdate: (operationId: string, request: UpdateRouteOperationRequest) => void;
   onDelete: (operation: RouteOperation) => void;
   onMove: (operation: RouteOperation, direction: MoveDirection) => void;
   onTranslate?: (operation: RouteOperation, field: AiFieldType) => void;
+  onRequestOperation?: () => void;
 }
 
 interface GridContext {
   canEdit: boolean;
+  operations: OperationOption[];
+  requestOperation?: () => void;
   remove: (operation: RouteOperation) => void;
   move: (operation: RouteOperation, direction: MoveDirection) => void;
   translate?: (operation: RouteOperation, field: AiFieldType) => void;
@@ -111,10 +117,12 @@ function ExpressionCell(params: ICellRendererParams<RouteOperation>) {
 export function RouteOperationsGrid({
   operations,
   canEdit,
+  operationOptions,
   onUpdate,
   onDelete,
   onMove,
   onTranslate,
+  onRequestOperation,
 }: RouteOperationsGridProps) {
   const { t } = useTranslation(['route']);
 
@@ -132,8 +140,22 @@ export function RouteOperationsGrid({
 
     return [
       text('operationNo', 'operationNo', 120),
-      text('operationId', 'operationId', 130),
-      text('description', 'description', 220),
+      {
+        field: 'operationId',
+        headerName: t('columns.operationId'),
+        editable: canEdit,
+        width: 160,
+        cellEditor: OperationCellEditor,
+        cellEditorPopup: true,
+      },
+      {
+        field: 'description',
+        headerName: t('columns.description'),
+        editable: canEdit,
+        width: 240,
+        cellEditor: OperationCellEditor,
+        cellEditorPopup: true,
+      },
       text('descriptionLen', 'descriptionLen', 130),
       text('nextOperation', 'nextOperation', 130),
       text('swingWc', 'swingWc', 110),
@@ -193,16 +215,45 @@ export function RouteOperationsGrid({
   }, [canEdit, t]);
 
   const context = useMemo<GridContext>(
-    () => ({ canEdit, remove: onDelete, move: onMove, translate: onTranslate }),
-    [canEdit, onDelete, onMove, onTranslate],
+    () => ({
+      canEdit,
+      operations: operationOptions,
+      requestOperation: onRequestOperation,
+      remove: onDelete,
+      move: onMove,
+      translate: onTranslate,
+    }),
+    [canEdit, operationOptions, onRequestOperation, onDelete, onMove, onTranslate],
   );
 
   const onCellValueChanged = useCallback(
-    (event: { data?: RouteOperation }) => {
-      if (!event.data) return;
-      onUpdate(event.data.id, toUpdateRequest(event.data));
+    (event: CellValueChangedEvent<RouteOperation>) => {
+      const row = event.data;
+      if (!row) return;
+
+      // Operation ID and Description are two views of the same definition: keep them in step.
+      const field = event.colDef.field;
+      if (field === 'operationId' || field === 'description') {
+        const match = operationOptions.find((option) =>
+          field === 'operationId' ? option.code === row.operationId : option.description === row.description,
+        );
+        if (match) {
+          const pairedField = field === 'operationId' ? 'description' : 'operationId';
+          const pairedValue = field === 'operationId' ? match.description : match.code;
+          if (row[pairedField] !== pairedValue) {
+            row[pairedField] = pairedValue;
+            event.api.refreshCells({
+              rowNodes: [event.node],
+              columns: [pairedField],
+              force: true,
+            });
+          }
+        }
+      }
+
+      onUpdate(row.id, toUpdateRequest(row));
     },
-    [onUpdate],
+    [onUpdate, operationOptions],
   );
 
   return (

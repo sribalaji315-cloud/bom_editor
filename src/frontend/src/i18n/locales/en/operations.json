@@ -1,0 +1,88 @@
+{
+  "title": "Operations",
+  "subtitle": "Define the operations available in the route Operation ID and Description dropdowns",
+  "tabs": {
+    "all": "All operations",
+    "pending": "Pending requests",
+    "pendingCount": "{{count}} awaiting review",
+    "pendingCount_other": "{{count}} awaiting review"
+  },
+  "table": {
+    "code": "Operation ID",
+    "description": "Description",
+    "status": "Status",
+    "requestedBy": "Requested by",
+    "actions": "Actions",
+    "empty": "No operations yet",
+    "noPending": "No requests are waiting for review",
+    "noReason": "No reason given",
+    "systemOrigin": "Defined directly"
+  },
+  "status": {
+    "Requested": "Pending review",
+    "Approved": "Approved",
+    "Rejected": "Rejected",
+    "inactive": "Inactive"
+  },
+  "actions": {
+    "create": "Add operation",
+    "edit": "Edit",
+    "approve": "Approve",
+    "reject": "Reject",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "delete": "Delete"
+  },
+  "form": {
+    "createTitle": "Add operation",
+    "editTitle": "Edit operation",
+    "code": "Operation ID",
+    "codePlaceholder": "e.g. ASSY10",
+    "description": "Description",
+    "descriptionPlaceholder": "e.g. Assemble frame",
+    "active": "Active",
+    "submit": "Save",
+    "createSuccess": "Operation created",
+    "createFailed": "Could not create operation",
+    "updateSuccess": "Operation updated",
+    "updateFailed": "Could not update operation"
+  },
+  "request": {
+    "title": "Request operation",
+    "info": "Your request is reviewed by a Data Specialist. It becomes selectable on routes once approved.",
+    "reason": "Why is it needed?",
+    "reasonPlaceholder": "Briefly explain where this operation will be used",
+    "submit": "Send request",
+    "success": "Request sent for review",
+    "failed": "Could not send the request"
+  },
+  "review": {
+    "approved": "Operation approved",
+    "approveFailed": "Could not approve the operation",
+    "rejected": "Request rejected",
+    "rejectFailed": "Could not reject the request",
+    "rejectTitle": "Reject request",
+    "rejectMessage": "Reject the request for \"{{code}}\"? It will not be selectable on routes."
+  },
+  "activate": {
+    "success": "Operation activated",
+    "failed": "Could not activate the operation"
+  },
+  "deactivate": {
+    "success": "Operation deactivated",
+    "failed": "Could not deactivate the operation"
+  },
+  "picker": {
+    "selectCode": "Select an operation",
+    "selectDescription": "Select a description",
+    "nothingFound": "No matching operation",
+    "notInList": "not defined",
+    "requestNew": "Request new operation"
+  },
+  "delete": {
+    "confirmTitle": "Delete operation",
+    "confirmMessage": "Delete \"{{code}}\"? Existing route operations keep their current value.",
+    "success": "Operation deleted",
+    "failed": "Could not delete the operation"
+  }
+}

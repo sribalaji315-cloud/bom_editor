@@ -27,8 +27,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { RouteOperationsGrid, type MoveDirection } from '../components/domain/RouteOperationsGrid';
 import { RouteHelpPanel } from '../components/domain/RouteHelpPanel';
 import { AiTranslateModal } from '../components/domain/AiTranslateModal';
+import {
+  OperationRequestModal,
+  type OperationRequestValues,
+} from '../components/domain/OperationRequestModal';
 import { useAuth } from '../context/AuthContext';
 import { useRoute, useRouteAudit } from '../hooks/useRoutes';
+import { useRequestOperation, useSelectableOperations } from '../hooks/useOperations';
 import {
   useCreateRouteOperation,
   useDeleteRouteOperation,
@@ -52,13 +57,15 @@ const EMPTY_HEADER: RouteHeaderFields = {
 };
 
 export function RouteEditorPage() {
-  const { t } = useTranslation(['route', 'common']);
+  const { t } = useTranslation(['route', 'common', 'operations']);
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { canEdit } = useAuth();
 
   const { data: route, isLoading } = useRoute(id);
   const { data: auditEntries } = useRouteAudit(id);
+  const { data: operationOptions } = useSelectableOperations();
+  const requestOperation = useRequestOperation();
   const updateRoute = useUpdateRoute(id);
   const createOperation = useCreateRouteOperation(id);
   const updateOperation = useUpdateRouteOperation(id);
@@ -67,6 +74,7 @@ export function RouteEditorPage() {
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
   const [translateTarget, setTranslateTarget] = useState<{
     operation: RouteOperation;
     field: AiFieldType;
@@ -112,6 +120,19 @@ export function RouteEditorPage() {
       { operationId, request },
       { onSuccess: notifySaved, onError: notifyFailed },
     );
+  };
+
+  const handleRequestOperation = (values: OperationRequestValues) => {
+    requestOperation.mutate(values, {
+      onSuccess: () => {
+        notifications.show({
+          color: 'nordGreen',
+          message: t('request.success', { ns: 'operations' }),
+        });
+        setRequestOpen(false);
+      },
+      onError: (error) => notifyFailed(error),
+    });
   };
 
   const applyTranslation = (expression: string) => {
@@ -261,15 +282,24 @@ export function RouteEditorPage() {
           <RouteOperationsGrid
             operations={operations}
             canEdit={canEdit}
+            operationOptions={operationOptions ?? []}
             onUpdate={handleUpdateOperation}
             onDelete={handleDeleteOperation}
             onMove={handleMoveOperation}
+            onRequestOperation={canEdit ? () => setRequestOpen(true) : undefined}
             onTranslate={
               canEdit ? (operation, field) => setTranslateTarget({ operation, field }) : undefined
             }
           />
         )}
       </div>
+
+      <OperationRequestModal
+        opened={requestOpen}
+        loading={requestOperation.isPending}
+        onClose={() => setRequestOpen(false)}
+        onSubmit={handleRequestOperation}
+      />
 
       {translateTarget && (
         <AiTranslateModal

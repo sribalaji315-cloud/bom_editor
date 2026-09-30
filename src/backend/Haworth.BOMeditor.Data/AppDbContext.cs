@@ -15,6 +15,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<BomLine> BomLines => Set<BomLine>();
     public DbSet<BomAuditEntry> BomAuditEntries => Set<BomAuditEntry>();
     public DbSet<ReleaseTemplate> ReleaseTemplates => Set<ReleaseTemplate>();
+    public DbSet<Operation> Operations => Set<Operation>();
     public DbSet<ValidationRule> ValidationRules => Set<ValidationRule>();
     public DbSet<Route> Routes => Set<Route>();
     public DbSet<RouteOperation> RouteOperations => Set<RouteOperation>();
@@ -77,6 +78,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasKey(t => t.Id);
             e.Property(t => t.Name).IsRequired().HasMaxLength(128);
             e.HasIndex(t => t.Name).IsUnique();
+        });
+
+        builder.Entity<Operation>(e =>
+        {
+            e.HasKey(o => o.Id);
+            e.Property(o => o.Code).IsRequired().HasMaxLength(64);
+            e.Property(o => o.Description).IsRequired().HasMaxLength(256);
+            e.Property(o => o.Status).HasConversion<string>().HasMaxLength(16);
+            e.Property(o => o.RequestReason).HasMaxLength(512);
+            e.HasIndex(o => o.Code).IsUnique();
         });
 
         builder.Entity<ValidationRule>(e =>

@@ -60,6 +60,7 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddScoped<IBomService, BomService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IReleaseTemplateService, ReleaseTemplateService>();
+builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IValidationRuleService, ValidationRuleService>();
 builder.Services.AddScoped<IBomValidationService, BomValidationService>();
 
@@ -112,6 +113,7 @@ app.MapAuthEndpoints();
 app.MapBomEndpoints();
 app.MapUserEndpoints();
 app.MapReleaseTemplateEndpoints();
+app.MapOperationEndpoints();
 app.MapRouteEndpoints();
 app.MapExportEndpoints();
 app.MapValidationEndpoints();
