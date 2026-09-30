@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Button, Paper, Select, Stack } from '@mantine/core';
+import { Button, Divider, Paper, Select, Stack } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import type { CustomCellEditorProps } from 'ag-grid-react';
 import { useTranslation } from 'react-i18next';
@@ -40,6 +40,24 @@ export function OperationCellEditor({
   return (
     <Paper withBorder p="xs" w={340}>
       <Stack gap="xs">
+        {/* Above the Select: the dropdown opens downward and would cover anything below it. */}
+        {requestOperation && (
+          <>
+            <Button
+              variant="subtle"
+              size="compact-sm"
+              leftSection={<IconPlus size={14} />}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                requestOperation();
+                stopEditing(true);
+              }}
+            >
+              {t('picker.requestNew')}
+            </Button>
+            <Divider />
+          </>
+        )}
         <Select
           data={data}
           value={value ?? null}
@@ -53,21 +71,8 @@ export function OperationCellEditor({
           clearable
           defaultDropdownOpened
           comboboxProps={{ withinPortal: false }}
-          maxDropdownHeight={260}
+          maxDropdownHeight={220}
         />
-        {requestOperation && (
-          <Button
-            variant="subtle"
-            size="compact-sm"
-            leftSection={<IconPlus size={14} />}
-            onClick={() => {
-              stopEditing(true);
-              requestOperation();
-            }}
-          >
-            {t('picker.requestNew')}
-          </Button>
-        )}
       </Stack>
     </Paper>
   );
