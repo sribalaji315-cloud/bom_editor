@@ -9,6 +9,7 @@
     "admin": "Admin",
     "users": "User Management",
     "releaseTemplates": "Release Templates",
+    "validationRules": "Validation Rules",
     "aiSettings": "AI Settings",
     "logout": "Sign out"
   },

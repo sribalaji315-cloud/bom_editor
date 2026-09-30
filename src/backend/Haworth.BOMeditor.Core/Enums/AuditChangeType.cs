@@ -9,5 +9,6 @@ public enum AuditChangeType
     Update,
     Delete,
     Move,
-    Restore
+    Restore,
+    Status
 }

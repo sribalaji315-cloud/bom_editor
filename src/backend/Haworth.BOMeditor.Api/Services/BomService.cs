@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Haworth.BOMeditor.Core.Domain;
 using Haworth.BOMeditor.Core.Dtos;
 using Haworth.BOMeditor.Core.Enums;
+using Haworth.BOMeditor.Core.Exceptions;
 using Haworth.BOMeditor.Core.Interfaces;
 using Haworth.BOMeditor.Data;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +13,7 @@ namespace Haworth.BOMeditor.Api.Services;
 /// Owns validation, persistence orchestration, and audit logging for BOM documents and lines.
 /// Endpoints must go through this service and never touch <see cref="AppDbContext"/> directly.
 /// </summary>
-public class BomService(AppDbContext db) : IBomService
+public class BomService(AppDbContext db, IBomValidationService validation) : IBomService
 {
     public async Task<IReadOnlyList<BomDocumentSummaryDto>> GetDocumentsAsync(CancellationToken ct = default)
     {
@@ -19,7 +21,7 @@ public class BomService(AppDbContext db) : IBomService
             .OrderByDescending(d => d.UpdatedAt)
             .Select(d => new BomDocumentSummaryDto(
                 d.Id, d.Name, d.SourceFileName, d.Lines.Count,
-                d.CreatedAt, d.CreatedBy, d.UpdatedAt))
+                d.CreatedAt, d.CreatedBy, d.UpdatedAt, d.Status))
             .ToListAsync(ct);
     }
 
@@ -42,7 +44,8 @@ public class BomService(AppDbContext db) : IBomService
 
         return new BomDocumentDetailDto(
             document.Id, document.Name, document.SourceFileName,
-            document.CreatedAt, document.CreatedBy, document.UpdatedAt, dtos);
+            document.CreatedAt, document.CreatedBy, document.UpdatedAt,
+            document.Status, document.StatusChangedAt, document.StatusChangedBy, dtos);
     }
 
     public async Task<BomLineDto> CreateLineAsync(
@@ -50,6 +53,7 @@ public class BomService(AppDbContext db) : IBomService
     {
         var document = await db.BomDocuments.FirstOrDefaultAsync(d => d.Id == documentId, ct)
             ?? throw new KeyNotFoundException("BOM document not found.");
+        EnsureEditable(document);
 
         if (request.ParentId is Guid parentId)
         {
@@ -85,11 +89,15 @@ public class BomService(AppDbContext db) : IBomService
             l => l.Id == lineId && l.BomDocumentId == documentId, ct);
         if (line is null) return null;
 
+        var document = await db.BomDocuments.FirstAsync(d => d.Id == documentId, ct);
+        EnsureEditable(document);
+        EnsureCurrent(line, request.ConcurrencyStamp);
+
         foreach (var change in DiffFields(line, request))
             AddAudit(documentId, lineId, user, AuditChangeType.Update, change.Field, change.Old, change.New);
 
         ApplyFields(line, request);
-        var document = await db.BomDocuments.FirstAsync(d => d.Id == documentId, ct);
+        line.ConcurrencyStamp = Guid.NewGuid();
         Touch(document);
         await db.SaveChangesAsync(ct);
 
@@ -103,6 +111,9 @@ public class BomService(AppDbContext db) : IBomService
         var target = lines.FirstOrDefault(l => l.Id == lineId);
         if (target is null) return false;
 
+        var document = await db.BomDocuments.FirstAsync(d => d.Id == documentId, ct);
+        EnsureEditable(document);
+
         // Soft delete: flag the target and its subtree so history is retained and export skips them.
         var subtree = CollectSubtree(lines, target);
         var affected = 0;
@@ -110,12 +121,12 @@ public class BomService(AppDbContext db) : IBomService
         {
             if (node.IsDeleted) continue;
             node.IsDeleted = true;
+            node.ConcurrencyStamp = Guid.NewGuid();
             affected++;
         }
 
         AddAudit(documentId, lineId, user, AuditChangeType.Delete, "Line",
             target.Description, $"Marked {affected} line(s) deleted");
-        var document = await db.BomDocuments.FirstAsync(d => d.Id == documentId, ct);
         Touch(document);
         await db.SaveChangesAsync(ct);
         return true;
@@ -128,18 +139,21 @@ public class BomService(AppDbContext db) : IBomService
         var target = lines.FirstOrDefault(l => l.Id == lineId);
         if (target is null) return false;
 
+        var document = await db.BomDocuments.FirstAsync(d => d.Id == documentId, ct);
+        EnsureEditable(document);
+
         var subtree = CollectSubtree(lines, target);
         var affected = 0;
         foreach (var node in subtree)
         {
             if (!node.IsDeleted) continue;
             node.IsDeleted = false;
+            node.ConcurrencyStamp = Guid.NewGuid();
             affected++;
         }
 
         AddAudit(documentId, lineId, user, AuditChangeType.Restore, "Line",
             $"Restored {affected} line(s)", target.Description);
-        var document = await db.BomDocuments.FirstAsync(d => d.Id == documentId, ct);
         Touch(document);
         await db.SaveChangesAsync(ct);
         return true;
@@ -152,12 +166,14 @@ public class BomService(AppDbContext db) : IBomService
         var target = lines.FirstOrDefault(l => l.Id == lineId);
         if (target is null) return false;
 
+        var document = await db.BomDocuments.FirstAsync(d => d.Id == documentId, ct);
+        EnsureEditable(document);
+
         // Permanent removal: drop the target and its subtree (EF orders the self-referencing deletes).
         var subtree = CollectSubtree(lines, target);
         db.BomLines.RemoveRange(subtree);
         AddAudit(documentId, lineId, user, AuditChangeType.Delete, "Line",
             target.Description, $"Permanently removed {subtree.Count} line(s)");
-        var document = await db.BomDocuments.FirstAsync(d => d.Id == documentId, ct);
         Touch(document);
         await db.SaveChangesAsync(ct);
         return true;
@@ -169,6 +185,10 @@ public class BomService(AppDbContext db) : IBomService
         var lines = await db.BomLines.Where(l => l.BomDocumentId == documentId).ToListAsync(ct);
         var line = lines.FirstOrDefault(l => l.Id == lineId);
         if (line is null) return false;
+
+        var document = await db.BomDocuments.FirstAsync(d => d.Id == documentId, ct);
+        EnsureEditable(document);
+        EnsureCurrent(line, request.ConcurrencyStamp);
 
         if (request.ParentId is Guid newParentId)
         {
@@ -184,6 +204,7 @@ public class BomService(AppDbContext db) : IBomService
         var oldSortOrder = line.SortOrder;
         line.ParentId = request.ParentId;
         line.SortOrder = request.SortOrder;
+        line.ConcurrencyStamp = Guid.NewGuid();
 
         var parentChanged = oldParentId != request.ParentId;
         if (parentChanged)
@@ -197,7 +218,6 @@ public class BomService(AppDbContext db) : IBomService
                 oldSortOrder.ToString(), request.SortOrder.ToString());
         }
 
-        var document = await db.BomDocuments.FirstAsync(d => d.Id == documentId, ct);
         Touch(document);
         await db.SaveChangesAsync(ct);
         return true;
@@ -211,6 +231,7 @@ public class BomService(AppDbContext db) : IBomService
 
         var target = await db.BomDocuments.FirstOrDefaultAsync(d => d.Id == documentId, ct)
             ?? throw new KeyNotFoundException("BOM document not found.");
+        EnsureEditable(target);
 
         var sourceExists = await db.BomDocuments.AnyAsync(d => d.Id == request.SourceDocumentId, ct);
         if (!sourceExists)
@@ -295,8 +316,10 @@ public class BomService(AppDbContext db) : IBomService
         // Remove lines and audit rows explicitly; EF orders line deletes children-first for the self FK.
         var lines = await db.BomLines.Where(l => l.BomDocumentId == documentId).ToListAsync(ct);
         var audits = await db.BomAuditEntries.Where(a => a.BomDocumentId == documentId).ToListAsync(ct);
+        var versions = await db.BomDocumentVersions.Where(v => v.BomDocumentId == documentId).ToListAsync(ct);
         db.BomLines.RemoveRange(lines);
         db.BomAuditEntries.RemoveRange(audits);
+        db.BomDocumentVersions.RemoveRange(versions);
         db.BomDocuments.Remove(document);
         await db.SaveChangesAsync(ct);
         return true;
@@ -313,7 +336,173 @@ public class BomService(AppDbContext db) : IBomService
             .ToListAsync(ct);
     }
 
+    // ---- workflow ---------------------------------------------------------
+
+    /// <summary>Legal transitions and the roles allowed to perform each.</summary>
+    private static readonly (BomDocumentStatus From, BomDocumentStatus To, string[] Roles)[] Transitions =
+    [
+        (BomDocumentStatus.Draft, BomDocumentStatus.InReview, [AppRole.DataSpecialist, AppRole.Admin, AppRole.Engineering]),
+        (BomDocumentStatus.InReview, BomDocumentStatus.Approved, [AppRole.DataSpecialist, AppRole.Admin]),
+        (BomDocumentStatus.InReview, BomDocumentStatus.Draft, [AppRole.DataSpecialist, AppRole.Admin]),
+        (BomDocumentStatus.Approved, BomDocumentStatus.Released, [AppRole.Admin]),
+        (BomDocumentStatus.Approved, BomDocumentStatus.Draft, [AppRole.DataSpecialist, AppRole.Admin])
+    ];
+
+    public async Task<BomDocumentDetailDto?> ChangeStatusAsync(
+        Guid documentId, ChangeBomStatusRequest request, UserContext user, CancellationToken ct = default)
+    {
+        var document = await db.BomDocuments.FirstOrDefaultAsync(d => d.Id == documentId, ct);
+        if (document is null) return null;
+
+        var transition = Transitions.FirstOrDefault(t => t.From == document.Status && t.To == request.Status);
+        if (transition.Roles is null)
+            throw new BomWorkflowException($"A {document.Status} BOM cannot move to {request.Status}.");
+        if (!user.IsInRole(transition.Roles))
+            throw new BomWorkflowException($"Your role cannot move a BOM to {request.Status}.");
+
+        // A BOM must be clean before anyone is asked to review it.
+        if (request.Status == BomDocumentStatus.InReview)
+        {
+            var report = await validation.ValidateAsync(documentId, ct);
+            if (report is { ErrorCount: > 0 })
+                throw new BomWorkflowException(
+                    $"Fix the {report.ErrorCount} validation error(s) before submitting for review.");
+        }
+
+        var previous = document.Status;
+        document.Status = request.Status;
+        document.StatusChangedAt = DateTimeOffset.UtcNow;
+        document.StatusChangedBy = user.UserName;
+        AddAudit(documentId, null, user, AuditChangeType.Status, "Status",
+            previous.ToString(), string.IsNullOrWhiteSpace(request.Comment)
+                ? request.Status.ToString()
+                : $"{request.Status} — {request.Comment}");
+        Touch(document);
+
+        // Approval and release freeze the structure, so keep a restorable copy of it.
+        if (request.Status is BomDocumentStatus.Approved or BomDocumentStatus.Released)
+            await AddSnapshotAsync(document, request.Status.ToString(), user, ct);
+
+        await db.SaveChangesAsync(ct);
+        return await GetDocumentAsync(documentId, ct);
+    }
+
+    public async Task<IReadOnlyList<BomDocumentVersionSummaryDto>> GetVersionsAsync(
+        Guid documentId, CancellationToken ct = default) =>
+        await db.BomDocumentVersions.AsNoTracking()
+            .Where(v => v.BomDocumentId == documentId)
+            .OrderByDescending(v => v.VersionNumber)
+            .Select(v => new BomDocumentVersionSummaryDto(
+                v.Id, v.VersionNumber, v.Label, v.Status, v.CreatedAt, v.CreatedBy, v.LineCount))
+            .ToListAsync(ct);
+
+    public async Task<BomDocumentVersionDetailDto?> GetVersionAsync(
+        Guid documentId, Guid versionId, CancellationToken ct = default)
+    {
+        var version = await db.BomDocumentVersions.AsNoTracking()
+            .FirstOrDefaultAsync(v => v.Id == versionId && v.BomDocumentId == documentId, ct);
+        if (version is null) return null;
+
+        return new BomDocumentVersionDetailDto(
+            version.Id, version.VersionNumber, version.Label, version.Status,
+            version.CreatedAt, version.CreatedBy, Deserialize(version.SnapshotJson));
+    }
+
+    public async Task<BomDocumentVersionSummaryDto?> CreateVersionAsync(
+        Guid documentId, CreateBomVersionRequest request, UserContext user, CancellationToken ct = default)
+    {
+        var document = await db.BomDocuments.FirstOrDefaultAsync(d => d.Id == documentId, ct);
+        if (document is null) return null;
+
+        var version = await AddSnapshotAsync(document, request.Label, user, ct);
+        await db.SaveChangesAsync(ct);
+        return new BomDocumentVersionSummaryDto(
+            version.Id, version.VersionNumber, version.Label, version.Status,
+            version.CreatedAt, version.CreatedBy, version.LineCount);
+    }
+
+    public async Task<bool> RestoreVersionAsync(
+        Guid documentId, Guid versionId, UserContext user, CancellationToken ct = default)
+    {
+        var document = await db.BomDocuments.FirstOrDefaultAsync(d => d.Id == documentId, ct);
+        if (document is null) return false;
+
+        var version = await db.BomDocumentVersions
+            .FirstOrDefaultAsync(v => v.Id == versionId && v.BomDocumentId == documentId, ct);
+        if (version is null) return false;
+        EnsureEditable(document);
+
+        // Drop the current tree first: the self-referencing FK is Restrict, so inserts and deletes
+        // of the same ids must not be in one SaveChanges.
+        var current = await db.BomLines.Where(l => l.BomDocumentId == documentId).ToListAsync(ct);
+        db.BomLines.RemoveRange(current);
+        await db.SaveChangesAsync(ct);
+
+        var restored = Deserialize(version.SnapshotJson).Select(dto =>
+        {
+            var line = new BomLine
+            {
+                Id = dto.Id,
+                BomDocumentId = documentId,
+                ParentId = dto.ParentId,
+                SortOrder = dto.SortOrder,
+                IsDeleted = dto.IsDeleted,
+                ConcurrencyStamp = Guid.NewGuid()
+            };
+            ApplyFields(line, dto);
+            return line;
+        }).ToList();
+
+        db.BomLines.AddRange(restored);
+        AddAudit(documentId, null, user, AuditChangeType.Restore, "Document",
+            $"{current.Count} line(s)", $"Restored version {version.VersionNumber} ({restored.Count} line(s))");
+        Touch(document);
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
     // ---- helpers ----------------------------------------------------------
+
+    private static void EnsureEditable(BomDocument document)
+    {
+        if (document.Status != BomDocumentStatus.Draft)
+            throw new BomWorkflowException($"This BOM is {document.Status} and cannot be edited.");
+    }
+
+    private static void EnsureCurrent(BomLine line, Guid? stamp)
+    {
+        if (stamp is Guid expected && expected != line.ConcurrencyStamp)
+            throw new BomConcurrencyException(line.Id,
+                "This line was changed by someone else. Reload before saving again.");
+    }
+
+    private async Task<BomDocumentVersion> AddSnapshotAsync(
+        BomDocument document, string? label, UserContext user, CancellationToken ct)
+    {
+        var detail = await GetDocumentAsync(document.Id, ct);
+        var lines = detail?.Lines ?? [];
+        var lastNumber = await db.BomDocumentVersions
+            .Where(v => v.BomDocumentId == document.Id)
+            .MaxAsync(v => (int?)v.VersionNumber, ct) ?? 0;
+
+        var version = new BomDocumentVersion
+        {
+            Id = Guid.NewGuid(),
+            BomDocumentId = document.Id,
+            VersionNumber = lastNumber + 1,
+            Label = string.IsNullOrWhiteSpace(label) ? null : label.Trim(),
+            Status = document.Status,
+            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedBy = user.UserName,
+            LineCount = lines.Count,
+            SnapshotJson = JsonSerializer.Serialize(lines)
+        };
+        db.BomDocumentVersions.Add(version);
+        return version;
+    }
+
+    private static IReadOnlyList<BomLineDto> Deserialize(string json) =>
+        JsonSerializer.Deserialize<List<BomLineDto>>(json) ?? [];
 
     private static List<BomLine> CollectSubtree(List<BomLine> lines, BomLine root)
     {
@@ -478,6 +667,7 @@ public class BomService(AppDbContext db) : IBomService
         SortOrder = l.SortOrder,
         Level = level,
         IsDeleted = l.IsDeleted,
+        ConcurrencyStamp = l.ConcurrencyStamp,
         Action = l.Action,
         Position = l.Position,
         BsObjectId = l.BsObjectId,

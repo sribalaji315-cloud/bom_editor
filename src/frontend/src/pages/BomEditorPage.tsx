@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   ActionIcon,
+  Badge,
   Button,
   Drawer,
   Group,
@@ -17,19 +18,31 @@ import {
   IconDownload,
   IconHelp,
   IconHistory,
+  IconListCheck,
   IconPlus,
+  IconVersions,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BomTreeGrid, type MoveDirection } from '../components/domain/BomTreeGrid';
+import { BomTreeGrid, type BomTreeGridHandle, type MoveDirection } from '../components/domain/BomTreeGrid';
 import { MoveLineModal } from '../components/domain/MoveLineModal';
 import { AddBomModal } from '../components/domain/AddBomModal';
 import { AiTranslateModal } from '../components/domain/AiTranslateModal';
+import { ValidationPanel } from '../components/domain/ValidationPanel';
+import { BomStatusBadge } from '../components/domain/BomStatusBadge';
+import { VersionsDrawer } from '../components/domain/VersionsDrawer';
 import { HelpPanel } from '../components/domain/HelpPanel';
 import { siblingsOf } from '../components/treeUtils';
 import { useAuth } from '../context/AuthContext';
 import { useBomAudit, useBomDocument } from '../hooks/useBoms';
+import {
+  useBomVersions,
+  useChangeBomStatus,
+  useCreateBomVersion,
+  useRestoreBomVersion,
+} from '../hooks/useBomVersions';
 import { useReleaseTemplates } from '../hooks/useReleaseTemplates';
+import { useValidateBom } from '../hooks/useValidation';
 import {
   useCreateBomLine,
   useDeleteBomLine,
@@ -40,18 +53,39 @@ import {
   useUpdateBomLine,
 } from '../hooks/useBomLines';
 import { exportBomDocument } from '../api/boms';
-import type { BomLine, UpdateBomLineRequest } from '../types/bom';
+import type { BomDocumentStatus, BomLine, UpdateBomLineRequest } from '../types/bom';
+import type { ValidationReport } from '../types/validation';
 import type { AiFieldType } from '../types/ai';
 
+/** The export request uses responseType blob, so a 409 body arrives as a Blob rather than JSON. */
+async function readBlockedReport(error: unknown): Promise<ValidationReport | null> {
+  const response = (error as { response?: { status?: number; data?: unknown } })?.response;
+  if (response?.status !== 409) return null;
+  if (response.data instanceof Blob) {
+    try {
+      return JSON.parse(await response.data.text()) as ValidationReport;
+    } catch {
+      return null;
+    }
+  }
+  return (response.data as ValidationReport) ?? null;
+}
+
+function conflictMessage(error: unknown): string | null {
+  const response = (error as { response?: { status?: number; data?: { error?: string } } })?.response;
+  return response?.status === 409 ? (response.data?.error ?? null) : null;
+}
+
 export function BomEditorPage() {
-  const { t } = useTranslation(['bom', 'common']);
+  const { t } = useTranslation(['bom', 'common', 'validation']);
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const { canEdit } = useAuth();
+  const { canEdit, hasRole } = useAuth();
 
   const { data: document, isLoading } = useBomDocument(id);
   const { data: auditEntries } = useBomAudit(id);
   const { data: releaseTemplates } = useReleaseTemplates();
+  const { data: versions, isLoading: versionsLoading } = useBomVersions(id);
   const updateLine = useUpdateBomLine(id);
   const createLine = useCreateBomLine(id);
   const deleteLine = useDeleteBomLine(id);
@@ -59,25 +93,94 @@ export function BomEditorPage() {
   const purgeLine = usePurgeBomLine(id);
   const moveLine = useMoveBomLine(id);
   const insertBom = useInsertBom(id);
+  const validateBom = useValidateBom(id);
+  const changeStatus = useChangeBomStatus(id);
+  const createVersion = useCreateBomVersion(id);
+  const restoreVersion = useRestoreBomVersion(id);
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [movingLine, setMovingLine] = useState<BomLine | null>(null);
   const [addBomOpen, setAddBomOpen] = useState(false);
+  const [validationOpen, setValidationOpen] = useState(false);
+  const [versionsOpen, setVersionsOpen] = useState(false);
+  const [report, setReport] = useState<ValidationReport | null>(null);
+  const gridRef = useRef<BomTreeGridHandle>(null);
   const [translateTarget, setTranslateTarget] = useState<{ line: BomLine; field: AiFieldType } | null>(
     null,
   );
 
   const lines = document?.lines ?? [];
+  const status = document?.status ?? 'Draft';
+  // Only drafts are editable; everything else is frozen for review.
+  const canEditNow = canEdit && status === 'Draft';
+  const canApprove = hasRole('DataSpecialist', 'Admin');
+  const canRelease = hasRole('Admin');
 
   const releaseTemplateOptions = (releaseTemplates ?? [])
     .filter((tpl) => tpl.isActive)
     .map((tpl) => tpl.name);
 
+  const invalidLineIds = useMemo(
+    () =>
+      new Set(
+        (report?.issues ?? [])
+          .filter((issue) => issue.severity === 'Error' && issue.lineId)
+          .map((issue) => issue.lineId as string),
+      ),
+    [report],
+  );
+
   const notifySaved = () =>
     notifications.show({ color: 'nordGreen', message: t('editor.saved') });
-  const notifyFailed = () =>
-    notifications.show({ color: 'nordRed', message: t('editor.saveFailed') });
+  const notifyFailed = (error?: unknown) => {
+    const conflict = conflictMessage(error);
+    notifications.show({
+      color: 'nordRed',
+      message: conflict ?? t('editor.saveFailed'),
+    });
+  };
+
+  const handleChangeStatus = (next: BomDocumentStatus) => {
+    changeStatus.mutate(
+      { status: next, comment: null },
+      {
+        onSuccess: () => notifications.show({ color: 'nordGreen', message: t('status.changed') }),
+        onError: (error) =>
+          notifications.show({
+            color: 'nordRed',
+            message: conflictMessage(error) ?? t('status.changeFailed'),
+          }),
+      },
+    );
+  };
+
+  const handleCreateVersion = (label: string | null) => {
+    createVersion.mutate(
+      { label },
+      {
+        onSuccess: () =>
+          notifications.show({ color: 'nordGreen', message: t('versions.snapshotTaken') }),
+        onError: (error) =>
+          notifications.show({
+            color: 'nordRed',
+            message: conflictMessage(error) ?? t('versions.snapshotFailed'),
+          }),
+      },
+    );
+  };
+
+  const handleRestoreVersion = (versionId: string, versionNumber: number) => {
+    if (!window.confirm(t('versions.restoreConfirm', { number: versionNumber }))) return;
+    restoreVersion.mutate(versionId, {
+      onSuccess: () => notifications.show({ color: 'nordGreen', message: t('versions.restored') }),
+      onError: (error) =>
+        notifications.show({
+          color: 'nordRed',
+          message: conflictMessage(error) ?? t('versions.restoreFailed'),
+        }),
+    });
+  };
 
   const handleUpdate = (lineId: string, request: UpdateBomLineRequest) => {
     updateLine.mutate({ lineId, request }, { onSuccess: notifySaved, onError: notifyFailed });
@@ -130,10 +233,21 @@ export function BomEditorPage() {
         .filter((l) => l.parentId === parentId)
         .reduce((max, l) => Math.max(max, l.sortOrder), -1) + 1;
     moveLine.mutate(
-      { lineId: movingLine.id, request: { parentId, sortOrder: nextSortOrder } },
+      {
+        lineId: movingLine.id,
+        request: {
+          parentId,
+          sortOrder: nextSortOrder,
+          concurrencyStamp: movingLine.concurrencyStamp,
+        },
+      },
       {
         onSuccess: () => notifications.show({ color: 'nordGreen', message: t('moveModal.moved') }),
-        onError: () => notifications.show({ color: 'nordRed', message: t('moveModal.moveFailed') }),
+        onError: (error) =>
+          notifications.show({
+            color: 'nordRed',
+            message: conflictMessage(error) ?? t('moveModal.moveFailed'),
+          }),
       },
     );
     setMovingLine(null);
@@ -170,25 +284,61 @@ export function BomEditorPage() {
     try {
       await moveLine.mutateAsync({
         lineId: line.id,
-        request: { parentId: line.parentId, sortOrder: other.sortOrder },
+        request: {
+          parentId: line.parentId,
+          sortOrder: other.sortOrder,
+          concurrencyStamp: line.concurrencyStamp,
+        },
       });
       await moveLine.mutateAsync({
         lineId: other.id,
-        request: { parentId: other.parentId, sortOrder: line.sortOrder },
+        request: {
+          parentId: other.parentId,
+          sortOrder: line.sortOrder,
+          concurrencyStamp: other.concurrencyStamp,
+        },
       });
-    } catch {
-      notifyFailed();
+    } catch (error) {
+      notifyFailed(error);
     }
   };
 
   const handleExport = async () => {
-    const blob = await exportBomDocument(id);
-    const url = URL.createObjectURL(blob);
-    const anchor = window.document.createElement('a');
-    anchor.href = url;
-    anchor.download = `${document?.name ?? 'bom'}.csv`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    try {
+      const blob = await exportBomDocument(id);
+      const url = URL.createObjectURL(blob);
+      const anchor = window.document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${document?.name ?? 'bom'}.csv`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      const blocked = await readBlockedReport(error);
+      if (!blocked) {
+        notifyFailed();
+        return;
+      }
+      setReport(blocked);
+      setValidationOpen(true);
+      notifications.show({ color: 'nordRed', message: t('editor.exportBlocked', { ns: 'validation' }) });
+    }
+  };
+
+  const handleValidate = () => {
+    validateBom.mutate(undefined, {
+      onSuccess: (result) => {
+        setReport(result);
+        setValidationOpen(true);
+        if (result.errorCount === 0) {
+          notifications.show({
+            color: 'nordGreen',
+            message: t('editor.clean', { ns: 'validation' }),
+          });
+        }
+      },
+      onError: () =>
+        notifications.show({ color: 'nordRed', message: t('editor.failed', { ns: 'validation' }) }),
+    });
   };
 
   if (isLoading || !document) {
@@ -203,9 +353,60 @@ export function BomEditorPage() {
             <IconArrowLeft size={18} />
           </ActionIcon>
           <Title order={3}>{document.name}</Title>
+          <BomStatusBadge status={status} size="lg" />
         </Group>
         <Group gap="xs">
-          {canEdit && (
+          {status === 'Draft' && canEdit && (
+            <Button
+              variant="light"
+              color="nordAmber"
+              loading={changeStatus.isPending}
+              onClick={() => handleChangeStatus('InReview')}
+            >
+              {t('status.submit')}
+            </Button>
+          )}
+          {status === 'InReview' && canApprove && (
+            <>
+              <Button
+                variant="light"
+                color="nordGreen"
+                loading={changeStatus.isPending}
+                onClick={() => handleChangeStatus('Approved')}
+              >
+                {t('status.approve')}
+              </Button>
+              <Button
+                variant="subtle"
+                color="nordRed"
+                loading={changeStatus.isPending}
+                onClick={() => handleChangeStatus('Draft')}
+              >
+                {t('status.reject')}
+              </Button>
+            </>
+          )}
+          {status === 'Approved' && canRelease && (
+            <Button
+              variant="light"
+              color="nordBlue"
+              loading={changeStatus.isPending}
+              onClick={() => handleChangeStatus('Released')}
+            >
+              {t('status.release')}
+            </Button>
+          )}
+          {status === 'Approved' && canApprove && (
+            <Button
+              variant="subtle"
+              color="gray"
+              loading={changeStatus.isPending}
+              onClick={() => handleChangeStatus('Draft')}
+            >
+              {t('status.reopen')}
+            </Button>
+          )}
+          {canEditNow && (
             <Button
               variant="light"
               color="nordGreen"
@@ -215,7 +416,7 @@ export function BomEditorPage() {
               {t('editor.addRoot')}
             </Button>
           )}
-          {canEdit && (
+          {canEditNow && (
             <Button
               variant="light"
               color="nordFrost"
@@ -225,11 +426,32 @@ export function BomEditorPage() {
               {t('editor.addBom')}
             </Button>
           )}
+          <Tooltip label={t('versions.open')}>
+            <ActionIcon variant="light" size="lg" onClick={() => setVersionsOpen(true)}>
+              <IconVersions size={18} />
+            </ActionIcon>
+          </Tooltip>
           <Tooltip label={t('audit.title')}>
             <ActionIcon variant="light" size="lg" onClick={() => setAuditOpen(true)}>
               <IconHistory size={18} />
             </ActionIcon>
           </Tooltip>
+          <Button
+            variant="light"
+            color={report && report.errorCount > 0 ? 'nordRed' : 'nordTeal'}
+            leftSection={<IconListCheck size={16} />}
+            loading={validateBom.isPending}
+            onClick={handleValidate}
+            rightSection={
+              report && report.errorCount > 0 ? (
+                <Badge size="sm" circle color="nordRed">
+                  {report.errorCount}
+                </Badge>
+              ) : undefined
+            }
+          >
+            {t('editor.validate', { ns: 'validation' })}
+          </Button>
           <Button
             variant="light"
             leftSection={<IconDownload size={16} />}
@@ -247,9 +469,11 @@ export function BomEditorPage() {
 
       <div style={{ flex: 1, minHeight: 0 }}>
         <BomTreeGrid
+          ref={gridRef}
           lines={lines}
-          canEdit={canEdit}
+          canEdit={canEditNow}
           releaseTemplateOptions={releaseTemplateOptions}
+          invalidLineIds={invalidLineIds}
           onUpdate={handleUpdate}
           onAddChild={handleAddChild}
           onDelete={handleDelete}
@@ -258,7 +482,7 @@ export function BomEditorPage() {
           onMove={handleMove}
           onMoveToParent={setMovingLine}
           onTranslate={
-            canEdit ? (line, field) => setTranslateTarget({ line, field }) : undefined
+            canEditNow ? (line, field) => setTranslateTarget({ line, field }) : undefined
           }
         />
       </div>
@@ -280,6 +504,25 @@ export function BomEditorPage() {
       />
 
       <HelpPanel opened={helpOpen} onClose={() => setHelpOpen(false)} canEdit={canEdit} />
+
+      <ValidationPanel
+        opened={validationOpen}
+        report={report}
+        loading={validateBom.isPending}
+        onClose={() => setValidationOpen(false)}
+        onSelectIssue={(lineId) => gridRef.current?.focusLine(lineId)}
+      />
+
+      <VersionsDrawer
+        opened={versionsOpen}
+        versions={versions}
+        loading={versionsLoading}
+        canCreate={canEdit}
+        canRestore={hasRole('Admin') && status === 'Draft'}
+        onClose={() => setVersionsOpen(false)}
+        onCreate={handleCreateVersion}
+        onRestore={(version) => handleRestoreVersion(version.id, version.versionNumber)}
+      />
 
       {translateTarget && (
         <AiTranslateModal

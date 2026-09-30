@@ -31,7 +31,10 @@ export interface BomLine extends BomLineFields {
   sortOrder: number;
   level: number;
   isDeleted: boolean;
+  concurrencyStamp: string;
 }
+
+export type BomDocumentStatus = 'Draft' | 'InReview' | 'Approved' | 'Released';
 
 export interface BomDocumentSummary {
   id: string;
@@ -41,6 +44,7 @@ export interface BomDocumentSummary {
   createdAt: string;
   createdBy: string | null;
   updatedAt: string;
+  status: BomDocumentStatus;
 }
 
 export interface BomDocumentDetail {
@@ -50,10 +54,13 @@ export interface BomDocumentDetail {
   createdAt: string;
   createdBy: string | null;
   updatedAt: string;
+  status: BomDocumentStatus;
+  statusChangedAt: string | null;
+  statusChangedBy: string | null;
   lines: BomLine[];
 }
 
-export type AuditChangeType = 'Create' | 'Update' | 'Delete' | 'Move' | 'Restore';
+export type AuditChangeType = 'Create' | 'Update' | 'Delete' | 'Move' | 'Restore' | 'Status';
 
 export interface BomAuditEntry {
   id: string;
@@ -71,11 +78,31 @@ export type CreateBomLineRequest = Partial<BomLineFields> & {
   sortOrder?: number | null;
 };
 
-export type UpdateBomLineRequest = BomLineFields;
+export type UpdateBomLineRequest = BomLineFields & { concurrencyStamp?: string };
 
 export interface MoveBomLineRequest {
   parentId: string | null;
   sortOrder: number;
+  concurrencyStamp?: string;
+}
+
+export interface ChangeBomStatusRequest {
+  status: BomDocumentStatus;
+  comment: string | null;
+}
+
+export interface BomDocumentVersionSummary {
+  id: string;
+  versionNumber: number;
+  label: string | null;
+  status: BomDocumentStatus;
+  createdAt: string;
+  createdBy: string | null;
+  lineCount: number;
+}
+
+export interface CreateBomVersionRequest {
+  label: string | null;
 }
 
 export interface InsertBomRequest {

@@ -163,12 +163,65 @@ namespace Haworth.BOMeditor.Data.Migrations
                     b.Property<string>("SourceFileName")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("StatusChangedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StatusChangedBy")
+                        .HasColumnType("TEXT");
+
                     b.Property<long>("UpdatedAt")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
                     b.ToTable("BomDocuments");
+                });
+
+            modelBuilder.Entity("Haworth.BOMeditor.Core.Domain.BomDocumentVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("BomDocumentId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LineCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BomDocumentId", "VersionNumber")
+                        .IsUnique();
+
+                    b.ToTable("BomDocumentVersions");
                 });
 
             modelBuilder.Entity("Haworth.BOMeditor.Core.Domain.BomLine", b =>
@@ -192,6 +245,9 @@ namespace Haworth.BOMeditor.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Class")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ConcurrencyStamp")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Conditions")
@@ -441,6 +497,63 @@ namespace Haworth.BOMeditor.Data.Migrations
                     b.HasIndex("RouteId", "SortOrder");
 
                     b.ToTable("RouteOperations");
+                });
+
+            modelBuilder.Entity("Haworth.BOMeditor.Core.Domain.ValidationRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AppliesWhen")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Parameters")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TargetField")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(48)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("ValidationRules");
                 });
 
             modelBuilder.Entity("Haworth.BOMeditor.Data.Identity.AppUser", b =>

@@ -18,4 +18,9 @@ public interface IBomService
     Task<bool> InsertBomAsync(Guid documentId, InsertBomRequest request, UserContext user, CancellationToken ct = default);
     Task<bool> DeleteDocumentAsync(Guid documentId, CancellationToken ct = default);
     Task<IReadOnlyList<BomAuditEntryDto>> GetAuditAsync(Guid documentId, CancellationToken ct = default);
+    Task<BomDocumentDetailDto?> ChangeStatusAsync(Guid documentId, ChangeBomStatusRequest request, UserContext user, CancellationToken ct = default);
+    Task<IReadOnlyList<BomDocumentVersionSummaryDto>> GetVersionsAsync(Guid documentId, CancellationToken ct = default);
+    Task<BomDocumentVersionDetailDto?> GetVersionAsync(Guid documentId, Guid versionId, CancellationToken ct = default);
+    Task<BomDocumentVersionSummaryDto?> CreateVersionAsync(Guid documentId, CreateBomVersionRequest request, UserContext user, CancellationToken ct = default);
+    Task<bool> RestoreVersionAsync(Guid documentId, Guid versionId, UserContext user, CancellationToken ct = default);
 }

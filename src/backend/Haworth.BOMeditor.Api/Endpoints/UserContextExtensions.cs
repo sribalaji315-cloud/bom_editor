@@ -8,5 +8,6 @@ public static class UserContextExtensions
     public static UserContext ToUserContext(this ClaimsPrincipal principal) =>
         new(
             principal.FindFirstValue(ClaimTypes.NameIdentifier),
-            principal.FindFirstValue(ClaimTypes.Name) ?? principal.FindFirstValue(ClaimTypes.Email));
+            principal.FindFirstValue(ClaimTypes.Name) ?? principal.FindFirstValue(ClaimTypes.Email),
+            principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList());
 }

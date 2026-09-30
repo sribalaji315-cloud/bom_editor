@@ -1,0 +1,266 @@
+{
+  "panel": {
+    "title": "Validation results",
+    "notRun": "Run validation to see results.",
+    "clean": "No issues found. This BOM is ready for export.",
+    "errors": "{{count}} error",
+    "errors_other": "{{count}} errors",
+    "warnings": "{{count}} warning",
+    "warnings_other": "{{count}} warnings",
+    "errorSection": "Errors \u2014 these block export",
+    "warningSection": "Warnings",
+    "onLine": "{{description}} \u00b7 {{code}}",
+    "onDocument": "{{code}}"
+  },
+  "editor": {
+    "validate": "Validate",
+    "validating": "Validating\u2026",
+    "clean": "Validation passed",
+    "failed": "Validation could not be run",
+    "exportBlocked": "Export blocked: fix the validation errors first."
+  },
+  "rules": {
+    "title": "Validation Rules",
+    "subtitle": "Rules run on demand against a BOM. Errors block CSV export; warnings do not.",
+    "empty": "No validation rules defined yet.",
+    "allLines": "All lines",
+    "checkLabels": {
+      "RequiredField": "Required field",
+      "NumericField": "Numeric field",
+      "AllowedValues": "Allowed values",
+      "MaxLength": "Maximum length",
+      "ReleaseTemplateExists": "Release template is defined",
+      "RouteCodeExists": "Route is defined",
+      "UniqueChildBsObjectId": "No duplicate BS Object ID under one parent",
+      "MaxDepth": "Maximum hierarchy depth",
+      "PlmExpressionRequired": "PLM expression is filled in",
+      "PhantomMustHaveChildren": "Phantom line has children"
+    },
+    "checks": {
+      "RequiredField": "The target field must not be empty.",
+      "NumericField": "The target field must be a number when it is filled in. Parameters lists literal values to allow anyway, e.g. Formula.",
+      "AllowedValues": "The target field must match one of the values in Parameters. Empty values are ignored.",
+      "MaxLength": "The target field must not be longer than the number of characters in Parameters.",
+      "ReleaseTemplateExists": "A release template that is filled in must match an active template. Empty values are ignored \u2014 use Required field to demand one.",
+      "RouteCodeExists": "A route that is filled in must match an active route. Empty values are ignored \u2014 use Required field to demand one.",
+      "UniqueChildBsObjectId": "Two lines under the same parent must not share a BS Object ID.",
+      "MaxDepth": "No line may sit deeper than the level given in Parameters.",
+      "PlmExpressionRequired": "When the source field chosen in Target field (conditions or formula) is filled in, its translated PLM column must be filled in too.",
+      "PhantomMustHaveChildren": "A phantom line must have at least one child line."
+    },
+    "columns": {
+      "code": "Code",
+      "name": "Name",
+      "type": "Check",
+      "severity": "Severity",
+      "targetField": "Field",
+      "parameters": "Parameters",
+      "appliesWhen": "Applies to",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "create": "New rule",
+      "edit": "Edit",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "delete": "Delete"
+    },
+    "form": {
+      "createTitle": "New validation rule",
+      "editTitle": "Edit validation rule",
+      "code": "Code",
+      "codePlaceholder": "REQ-DESCRIPTION",
+      "name": "Name",
+      "namePlaceholder": "Description is required",
+      "type": "Check",
+      "severity": "Severity",
+      "targetField": "Target field",
+      "targetFieldHint": "Leave empty for checks that span the whole BOM.",
+      "notUsed": "Not used by this check.",
+      "targetFieldFor": {
+        "RequiredField": "The BOM column that must not be empty.",
+        "NumericField": "The BOM column that must hold a number.",
+        "AllowedValues": "The BOM column whose value is checked against the list below.",
+        "MaxLength": "The BOM column whose length is checked.",
+        "PlmExpressionRequired": "Choose conditions or formula \u2014 it decides which pair of columns is compared."
+      },
+      "parameters": "Parameters",
+      "parametersHint": "A number, or a comma-separated list, depending on the check.",
+      "parametersFor": {
+        "NumericField": "Text values to accept even though they are not numbers \u2014 the source CSV writes Formula into numeric columns. Separate several with commas, or leave empty to demand a strict number.",
+        "AllowedValues": "The values that are allowed, separated by commas.",
+        "MaxLength": "The largest number of characters allowed.",
+        "MaxDepth": "The deepest level allowed."
+      },
+      "parametersHintFor": {
+        "NumericField": "Formula",
+        "AllowedValues": "PART, PURCHASED, ASSEMBLY",
+        "MaxLength": "60",
+        "MaxDepth": "8"
+      },
+      "appliesWhen": "Applies when",
+      "appliesWhenIntro": "Limit the rule to part of the BOM. With no conditions it checks every line.",
+      "appliesWhenHint": "Operators: = != > >= < <= contains startswith in (a,b) not in (a,b) is empty / is not empty. Combine with and / or.",
+      "appliesWhenPlaceholder": "phantom = false and hasChildren = true",
+      "appliesWhenFields": "Fields: {{fields}}",
+      "editAsText": "Edit as text",
+      "useBuilder": "Back to the builder",
+      "notBuildable": "This condition is too complex for the builder, so it stays as text.",
+      "message": "Message shown to the user",
+      "messageHint": "Supports {field}, {value} and {parameters} placeholders.",
+      "active": "Active",
+      "submit": "Save",
+      "createSuccess": "Rule created",
+      "createFailed": "Could not create the rule",
+      "updateSuccess": "Rule updated",
+      "updateFailed": "Could not update the rule"
+    },
+    "delete": {
+      "confirmTitle": "Delete validation rule",
+      "confirmMessage": "Delete rule \"{{name}}\"? This cannot be undone.",
+      "success": "Rule deleted",
+      "failed": "Could not delete the rule"
+    },
+    "severity": {
+      "Error": "Error",
+      "Warning": "Warning"
+    }
+  },
+  "builder": {
+    "empty": "No conditions \u2014 the rule checks every line.",
+    "add": "Add condition",
+    "where": "Where",
+    "and": "and",
+    "or": "or",
+    "joiner": "Combine with",
+    "field": "Field",
+    "operator": "Operator",
+    "value": "Value",
+    "remove": "Remove condition",
+    "true": "true",
+    "false": "false",
+    "valuePlaceholder": "Value",
+    "listPlaceholder": "A, B, C"
+  },
+  "help": {
+    "title": "How to define a validation rule",
+
+      "intro": "A rule is a single check the app runs over a BOM when someone presses Validate. You choose what is checked, which lines it applies to, and how serious a failure is.",
+      "flow": {
+        "title": "How a rule works",
+        "step1": "The BOM is loaded. Deleted lines are skipped entirely.",
+        "step2": "If the rule has an \u201cApplies when\u201d condition, only the lines matching it are kept.",
+        "step3": "The chosen check runs on those lines, using Target field and Parameters as its arguments.",
+        "step4": "Each failure appears in the Validation results panel at the chosen severity. Errors block CSV export; warnings do not."
+      },
+      "usage": {
+        "required": "Required",
+        "optional": "Optional",
+        "ignored": "Not used"
+      },
+      "fields": {
+        "code": {
+          "title": "Code",
+          "body": "A short, stable identifier shown next to every issue the rule reports, for example REQ-ROUTE. Use capitals and hyphens.",
+          "note": "It must be unique and cannot be changed after the rule is created, because it is how people refer to the rule."
+        },
+        "name": {
+          "title": "Name",
+          "body": "A plain description of the rule for this admin list, for example \u201cRoute is required on assemblies\u201d. It is not shown to the people validating BOMs \u2014 that is what Message is for."
+        },
+        "check": {
+          "title": "Check",
+          "body": "The logic that runs. This is the most important choice: each check answers a different question, and picking the wrong one is the usual reason a rule reports nothing.",
+          "colCheck": "Check",
+          "colMeaning": "What it verifies",
+          "colField": "Target field",
+          "colParameters": "Parameters"
+        },
+        "severity": {
+          "title": "Severity",
+          "error": "blocks CSV export and blocks submitting the BOM for review until it is fixed.",
+          "warning": "is listed in the results panel but never blocks anything.",
+          "note": "Start new rules as warnings. Promote them to errors once the existing BOMs are clean, otherwise every export is blocked on day one."
+        },
+        "targetField": {
+          "title": "Target field",
+          "body": "The BOM column the check looks at. Required for Required field, Numeric field, Allowed values and Maximum length.",
+          "plm": "For \u201cPLM expression is filled in\u201d, choose conditions or formula \u2014 it decides which pair of columns is compared.",
+          "note": "Checks marked \u201cNot used\u201d in the table above ignore this box completely, so leave it empty for them."
+        },
+        "parameters": {
+          "title": "Parameters",
+          "body": "An extra argument whose meaning depends on the check. The Check table above lists exactly what each one expects. A check that does not use it leaves the box greyed out.",
+          "number": "Maximum length and Maximum depth: a single number, for example 60 or 8.",
+          "list": "Allowed values: a comma-separated list, for example PART, PURCHASED, ASSEMBLY.",
+          "literals": "Numeric field: text values to accept even though they are not numbers, separated by commas.",
+          "formulaNote": "This is why the supplied \u201cFinal quantity must be numeric\u201d rule has Formula in its Parameters box: the exported CSV writes the word Formula into numeric columns where the value is calculated in PLM. Remove it and every one of those lines is reported as an error."
+        },
+        "appliesWhen": {
+          "title": "Applies when",
+          "body": "An optional filter that narrows the rule to part of the BOM. Leave it empty and the rule checks every line. This is how you express exceptions such as \u201conly lines that are not phantom\u201d.",
+          "shape": "Each condition is written as: field, operator, value.",
+          "colOperator": "Operator",
+          "colMeaning": "Meaning",
+          "colExample": "Example",
+          "combining": "Combining conditions",
+          "combiningBody": "Join conditions with and / or. There are no brackets: every or splits the expression first, so \u201ca and b or c\u201d means \u201c(a and b) or c\u201d. Spaces around and / or are required; spaces around the operator are optional.",
+          "specialFields": "Fields that are not BOM columns",
+          "level": "level \u2014 the depth in the tree, where a top-level line is 1.",
+          "hasChildren": "hasChildren \u2014 true when the line has at least one child line, so it is an assembly rather than a single part. Deleted children do not count.",
+          "booleans": "phantom, isEbom and hasChildren are true or false. Compare them with = true or = false.",
+          "examples": "Common conditions",
+          "colGoal": "You want to check",
+          "colCondition": "Condition",
+          "note": "A condition that cannot be understood is rejected when you save, so a typo can never silently switch a rule off."
+        },
+        "message": {
+          "title": "Message shown to the user",
+          "body": "The sentence shown in the Validation results panel. Write it as an instruction to the person fixing the BOM. You can insert:",
+          "field": "{field} \u2014 the target field name.",
+          "value": "{value} \u2014 the offending value on the line.",
+          "parameters": "{parameters} \u2014 whatever you typed in Parameters.",
+          "note": "If you leave this empty a generic English sentence is used instead."
+        },
+        "active": {
+          "title": "Active",
+          "body": "Switch a rule off to stop it running without deleting it, and without losing its history. Inactive rules are skipped completely."
+        }
+      },
+      "operators": {
+        "eq": { "symbol": "=", "meaning": "equals, ignoring capitals", "example": "phantom = false" },
+        "ne": { "symbol": "!= or <>", "meaning": "does not equal", "example": "action != Delete" },
+        "gt": { "symbol": ">", "meaning": "greater than (numbers only)", "example": "level > 1" },
+        "gte": { "symbol": ">=", "meaning": "greater than or equal to", "example": "level >= 3" },
+        "lt": { "symbol": "<", "meaning": "less than", "example": "level < 4" },
+        "lte": { "symbol": "<=", "meaning": "less than or equal to", "example": "level <= 2" },
+        "contains": { "symbol": "contains", "meaning": "the text appears anywhere in the value", "example": "description contains bracket" },
+        "startswith": { "symbol": "startswith", "meaning": "the value begins with the text", "example": "bsObjectId startswith B000" },
+        "in": { "symbol": "in (a,b)", "meaning": "matches one of the listed values", "example": "class in (PART, ASSEMBLY)" },
+        "notIn": { "symbol": "not in (a,b)", "meaning": "matches none of the listed values", "example": "uom not in (EA, PC)" },
+        "isEmpty": { "symbol": "is empty", "meaning": "the field has no value", "example": "releaseTemplate is empty" },
+        "isNotEmpty": { "symbol": "is not empty", "meaning": "the field has a value", "example": "conditions is not empty" }
+      },
+      "examples": {
+        "assemblies": { "goal": "Only assemblies that are really manufactured", "condition": "phantom = false and hasChildren = true" },
+        "leaves": { "goal": "Only single parts, not assemblies", "condition": "hasChildren = false" },
+        "notRoot": { "goal": "Everything except the top-level line", "condition": "level > 1" },
+        "byClass": { "goal": "Only certain classes", "condition": "class in (PART, PURCHASED)" },
+        "staged": { "goal": "Skip lines staged for deletion in PLM", "condition": "action != Delete" },
+        "withCondition": { "goal": "Only lines that already carry a rule in plain language", "condition": "conditions is not empty" }
+      },
+      "walkthrough": {
+        "title": "Worked example",
+        "goal": "\u201cEvery manufactured assembly must have a route, but phantoms and single parts do not.\u201d",
+        "code": "REQ-ROUTE",
+        "appliesWhen": "phantom = false and hasChildren = true",
+        "message": "Route is required on manufactured assemblies.",
+        "note": "Note the check: Required field, not Route is defined. \u201cRoute is defined\u201d only verifies a route that is already filled in, so on its own it would never notice a missing one."
+      }
+    }
+}

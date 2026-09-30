@@ -8,6 +8,7 @@ import { RouteListPage } from './pages/RouteListPage';
 import { RouteEditorPage } from './pages/RouteEditorPage';
 import { UserManagementPage } from './pages/UserManagementPage';
 import { ReleaseTemplatesPage } from './pages/ReleaseTemplatesPage';
+import { ValidationRulesPage } from './pages/ValidationRulesPage';
 import { AiSettingsPage } from './pages/AiSettingsPage';
 
 function App() {
@@ -70,6 +71,16 @@ function App() {
           <ProtectedRoute roles={['Admin']}>
             <AppLayout>
               <ReleaseTemplatesPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/validation-rules"
+        element={
+          <ProtectedRoute roles={['Admin']}>
+            <AppLayout>
+              <ValidationRulesPage />
             </AppLayout>
           </ProtectedRoute>
         }

@@ -1,3 +1,5 @@
+using Haworth.BOMeditor.Core.Enums;
+
 namespace Haworth.BOMeditor.Core.Domain;
 
 /// <summary>
@@ -12,6 +14,10 @@ public class BomDocument
     public DateTimeOffset CreatedAt { get; set; }
     public string? CreatedBy { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+
+    public BomDocumentStatus Status { get; set; } = BomDocumentStatus.Draft;
+    public DateTimeOffset? StatusChangedAt { get; set; }
+    public string? StatusChangedBy { get; set; }
 
     public ICollection<BomLine> Lines { get; set; } = new List<BomLine>();
 }

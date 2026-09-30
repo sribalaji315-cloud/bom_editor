@@ -1,4 +1,40 @@
 {
+  "status": {
+    "Draft": "Draft",
+    "InReview": "In review",
+    "Approved": "Approved",
+    "Released": "Released",
+    "readOnly": "This BOM is {{status}} and cannot be edited.",
+    "changedBy": "{{status}} by {{name}} on {{when}}",
+    "submit": "Submit for review",
+    "approve": "Approve",
+    "reject": "Send back to draft",
+    "release": "Release",
+    "reopen": "Reopen as draft",
+    "changed": "Status updated",
+    "changeFailed": "Could not change the status"
+  },
+  "versions": {
+    "title": "Versions",
+    "open": "Versions",
+    "empty": "No versions yet. One is taken automatically on approval and release.",
+    "create": "Snapshot",
+    "created": "Created",
+    "label": "Label",
+    "labelPlaceholder": "Optional, e.g. before rework",
+    "lines": "Lines",
+    "number": "Version",
+    "numbered": "v{{number}}",
+    "restore": "Restore",
+    "restoreConfirm": "Replace the current lines with version {{number}}? The current structure will be lost.",
+    "restored": "Version restored",
+    "restoreFailed": "Could not restore the version",
+    "snapshotTaken": "Snapshot created",
+    "snapshotFailed": "Could not create a snapshot"
+  },
+  "conflict": {
+    "message": "This line was changed by someone else. The grid has been refreshed."
+  },
   "list": {
     "title": "BOM Documents",
     "empty": "No BOM documents yet. Import a CSV to get started.",

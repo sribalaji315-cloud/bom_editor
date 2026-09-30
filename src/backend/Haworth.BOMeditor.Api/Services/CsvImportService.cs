@@ -157,7 +157,7 @@ public class CsvImportService(AppDbContext db) : ICsvImportService
 
         return new BomDocumentSummaryDto(
             document.Id, document.Name, document.SourceFileName, lines.Count,
-            document.CreatedAt, document.CreatedBy, document.UpdatedAt);
+            document.CreatedAt, document.CreatedBy, document.UpdatedAt, document.Status);
     }
 
     /// <summary>Depth = number of the first level column (ascending) that holds a value, or 0.</summary>

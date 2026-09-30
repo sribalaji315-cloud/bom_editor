@@ -29,6 +29,7 @@ import { useBomDocuments } from '../hooks/useBoms';
 import { useDeleteBomDocument, useImportBom, useInspectBomImport } from '../hooks/useBomLines';
 import { useAuth } from '../context/AuthContext';
 import { ImportMappingModal } from '../components/domain/ImportMappingModal';
+import { BomStatusBadge } from '../components/domain/BomStatusBadge';
 import type { BomDocumentSummary, BomImportMapping, ImportInspectResult } from '../types/bom';
 
 interface PendingImport {
@@ -196,6 +197,7 @@ export function BomListPage() {
                 <Group justify="space-between" wrap="nowrap">
                   <Text fw={600}>{doc.name}</Text>
                   <Group gap="xs" wrap="nowrap">
+                    <BomStatusBadge status={doc.status} />
                     <Badge color="nordFrost" variant="light">
                       {t('list.lineCount', { count: doc.lineCount })}
                     </Badge>

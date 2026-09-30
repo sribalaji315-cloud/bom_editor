@@ -38,6 +38,8 @@ public record BomLineDto : BomLineFields
     public int Level { get; init; }
     /// <summary>Soft-deleted lines are shown struck-through and omitted from export.</summary>
     public bool IsDeleted { get; init; }
+    /// <summary>Send this back on update/move so a stale edit is rejected instead of overwriting.</summary>
+    public Guid ConcurrencyStamp { get; init; }
 }
 
 public record BomDocumentSummaryDto(
@@ -47,7 +49,8 @@ public record BomDocumentSummaryDto(
     int LineCount,
     DateTimeOffset CreatedAt,
     string? CreatedBy,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    BomDocumentStatus Status);
 
 public record BomDocumentDetailDto(
     Guid Id,
@@ -56,6 +59,9 @@ public record BomDocumentDetailDto(
     DateTimeOffset CreatedAt,
     string? CreatedBy,
     DateTimeOffset UpdatedAt,
+    BomDocumentStatus Status,
+    DateTimeOffset? StatusChangedAt,
+    string? StatusChangedBy,
     IReadOnlyList<BomLineDto> Lines);
 
 /// <summary>Create a new line under an optional parent, at an optional position.</summary>
@@ -66,10 +72,37 @@ public record CreateBomLineRequest : BomLineFields
 }
 
 /// <summary>Full replacement of a line's editable fields.</summary>
-public record UpdateBomLineRequest : BomLineFields;
+public record UpdateBomLineRequest : BomLineFields
+{
+    /// <summary>The stamp the caller last read; null skips the staleness check.</summary>
+    public Guid? ConcurrencyStamp { get; init; }
+}
 
 /// <summary>Reparent and/or reorder a line.</summary>
-public record MoveBomLineRequest(Guid? ParentId, int SortOrder);
+public record MoveBomLineRequest(Guid? ParentId, int SortOrder, Guid? ConcurrencyStamp = null);
+
+/// <summary>Move a document to another review state.</summary>
+public record ChangeBomStatusRequest(BomDocumentStatus Status, string? Comment);
+
+public record BomDocumentVersionSummaryDto(
+    Guid Id,
+    int VersionNumber,
+    string? Label,
+    BomDocumentStatus Status,
+    DateTimeOffset CreatedAt,
+    string? CreatedBy,
+    int LineCount);
+
+public record BomDocumentVersionDetailDto(
+    Guid Id,
+    int VersionNumber,
+    string? Label,
+    BomDocumentStatus Status,
+    DateTimeOffset CreatedAt,
+    string? CreatedBy,
+    IReadOnlyList<BomLineDto> Lines);
+
+public record CreateBomVersionRequest(string? Label);
 
 /// <summary>Insert copies of selected lines (each with its subtree) from another BOM under an optional parent.</summary>
 public record InsertBomRequest(Guid SourceDocumentId, Guid? ParentId, IReadOnlyList<Guid> LineIds);

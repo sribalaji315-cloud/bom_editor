@@ -4,6 +4,7 @@ export const queryKeys = {
     lists: () => [...queryKeys.boms.all, 'list'] as const,
     detail: (id: string) => [...queryKeys.boms.all, 'detail', id] as const,
     audit: (id: string) => [...queryKeys.boms.all, 'audit', id] as const,
+    versions: (id: string) => [...queryKeys.boms.all, 'versions', id] as const,
   },
   auth: {
     me: ['auth', 'me'] as const,
@@ -15,6 +16,11 @@ export const queryKeys = {
   releaseTemplates: {
     all: ['release-templates'] as const,
     lists: () => [...queryKeys.releaseTemplates.all, 'list'] as const,
+  },
+  validation: {
+    all: ['validation'] as const,
+    rules: () => [...queryKeys.validation.all, 'rules'] as const,
+    metadata: () => [...queryKeys.validation.all, 'metadata'] as const,
   },
   routes: {
     all: ['routes'] as const,

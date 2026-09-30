@@ -3,10 +3,13 @@ using System.Text.Json.Serialization;
 using Haworth.BOMeditor.Api.Auth;
 using Haworth.BOMeditor.Api.Data;
 using Haworth.BOMeditor.Api.Endpoints;
+using Haworth.BOMeditor.Api.Middleware;
 using Haworth.BOMeditor.Api.Services;
 using Haworth.BOMeditor.Api.Services.Llm;
 using Haworth.BOMeditor.Core.Enums;
 using Haworth.BOMeditor.Core.Interfaces;
+using Haworth.BOMeditor.Core.Validation;
+using Haworth.BOMeditor.Core.Validation.Checks;
 using Haworth.BOMeditor.Data;
 using Haworth.BOMeditor.Data.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -57,6 +60,20 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddScoped<IBomService, BomService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IReleaseTemplateService, ReleaseTemplateService>();
+builder.Services.AddScoped<IValidationRuleService, ValidationRuleService>();
+builder.Services.AddScoped<IBomValidationService, BomValidationService>();
+
+// One registration per built-in rule check; BomValidationService resolves them by rule type.
+builder.Services.AddScoped<IBomRuleCheck, RequiredFieldCheck>();
+builder.Services.AddScoped<IBomRuleCheck, NumericFieldCheck>();
+builder.Services.AddScoped<IBomRuleCheck, AllowedValuesCheck>();
+builder.Services.AddScoped<IBomRuleCheck, MaxLengthCheck>();
+builder.Services.AddScoped<IBomRuleCheck, ReleaseTemplateExistsCheck>();
+builder.Services.AddScoped<IBomRuleCheck, RouteCodeExistsCheck>();
+builder.Services.AddScoped<IBomRuleCheck, UniqueChildBsObjectIdCheck>();
+builder.Services.AddScoped<IBomRuleCheck, MaxDepthCheck>();
+builder.Services.AddScoped<IBomRuleCheck, PlmExpressionRequiredCheck>();
+builder.Services.AddScoped<IBomRuleCheck, PhantomMustHaveChildrenCheck>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddScoped<IRouteImportService, RouteImportService>();
 builder.Services.AddScoped<ICsvImportService, CsvImportService>();
@@ -75,6 +92,9 @@ builder.Services.AddHttpClient<ILlmClient, GeminiClient>(c => c.Timeout = TimeSp
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<WorkflowExceptionHandler>();
+
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? ["http://localhost:3000"];
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
@@ -82,6 +102,7 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -93,6 +114,7 @@ app.MapUserEndpoints();
 app.MapReleaseTemplateEndpoints();
 app.MapRouteEndpoints();
 app.MapExportEndpoints();
+app.MapValidationEndpoints();
 app.MapAiEndpoints();
 
 await DbSeeder.SeedAsync(app.Services);

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import {
   ActionIcon,
   Button,
@@ -26,9 +26,11 @@ import { AgGridReact } from 'ag-grid-react';
 import type {
   ColDef,
   EditableCallbackParams,
+  GridApi,
   ICellEditorParams,
   ICellRendererParams,
   RowClassParams,
+  RowStyle,
   ValueFormatterParams,
 } from 'ag-grid-community';
 import { useTranslation } from 'react-i18next';
@@ -68,6 +70,9 @@ interface BomTreeGridProps {
   lines: BomLine[];
   canEdit: boolean;
   releaseTemplateOptions: string[];
+  /** Lines reported by the last validation run; highlighted until the next run. */
+  invalidLineIds?: Set<string>;
+  ref?: React.Ref<BomTreeGridHandle>;
   onUpdate: (lineId: string, request: UpdateBomLineRequest) => void;
   onAddChild: (parent: BomLine | null) => void;
   onDelete: (line: BomLine) => void;
@@ -76,6 +81,11 @@ interface BomTreeGridProps {
   onMove: (line: BomLine, direction: MoveDirection) => void;
   onMoveToParent: (line: BomLine) => void;
   onTranslate?: (line: BomLine, field: AiFieldType) => void;
+}
+
+export interface BomTreeGridHandle {
+  /** Expands the ancestors of the line and scrolls it into view. */
+  focusLine: (lineId: string) => void;
 }
 
 interface GridRow extends BomLine {
@@ -121,7 +131,7 @@ function toUpdateRequest(row: GridRow): UpdateBomLineRequest {
     weightKg: row.weightKg,
     volumeM3: row.volumeM3,
   };
-  return fields;
+  return { ...fields, concurrencyStamp: row.concurrencyStamp };
 }
 
 function StructureCell(params: ICellRendererParams<GridRow>) {
@@ -226,6 +236,8 @@ export function BomTreeGrid({
   lines,
   canEdit,
   releaseTemplateOptions,
+  invalidLineIds,
+  ref,
   onUpdate,
   onAddChild,
   onDelete,
@@ -238,6 +250,26 @@ export function BomTreeGrid({
   const { t } = useTranslation(['bom']);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
+  const gridApiRef = useRef<GridApi<GridRow> | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    focusLine: (lineId: string) => {
+      const parentById = new Map(lines.map((l) => [l.id, l.parentId]));
+      const ancestors = new Set<string>();
+      let current = parentById.get(lineId) ?? null;
+      while (current) {
+        ancestors.add(current);
+        current = parentById.get(current) ?? null;
+      }
+      setCollapsed((prev) => {
+        const next = new Set(prev);
+        for (const id of ancestors) next.delete(id);
+        return next;
+      });
+      // The row only exists after the expansion has rendered.
+      setTimeout(() => gridApiRef.current?.ensureNodeVisible((node) => node.data?.id === lineId, 'middle'), 0);
+    },
+  }));
 
   const toggleColumn = useCallback((id: string) => {
     setHiddenCols((prev) => {
@@ -468,11 +500,17 @@ export function BomTreeGrid({
           columnDefs={columnDefs}
           context={context}
           getRowId={(p) => p.data.id}
-          getRowStyle={(p: RowClassParams<GridRow>) =>
-            p.data?.isDeleted || p.data?.action === 'Delete'
-              ? { textDecoration: 'line-through', opacity: 0.55 }
-              : undefined
-          }
+          onGridReady={(p) => {
+            gridApiRef.current = p.api;
+          }}
+          getRowStyle={(p: RowClassParams<GridRow>): RowStyle | undefined => {
+            if (p.data?.isDeleted || p.data?.action === 'Delete') {
+              return { textDecoration: 'line-through', opacity: 0.55 };
+            }
+            return p.data && invalidLineIds?.has(p.data.id)
+              ? { backgroundColor: 'var(--mantine-color-nordRed-light)' }
+              : undefined;
+          }}
           defaultColDef={{ resizable: true, sortable: false, filter: false }}
           singleClickEdit={false}
           stopEditingWhenCellsLoseFocus

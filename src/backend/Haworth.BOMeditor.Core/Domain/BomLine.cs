@@ -23,6 +23,9 @@ public class BomLine
     /// <summary>Order among siblings under the same parent.</summary>
     public int SortOrder { get; set; }
 
+    /// <summary>Reissued on every write; callers send back the value they read to detect stale edits.</summary>
+    public Guid ConcurrencyStamp { get; set; } = Guid.NewGuid();
+
     /// <summary>Soft-delete marker: the line is kept for history but excluded from export.</summary>
     public bool IsDeleted { get; set; }
 

@@ -24,6 +24,39 @@ public static class BomEndpoints
         group.MapGet("/{id:guid}/audit", async (Guid id, IBomService service, CancellationToken ct) =>
             Results.Ok(await service.GetAuditAsync(id, ct)));
 
+        group.MapPost("/{id:guid}/status", async (
+            Guid id, ChangeBomStatusRequest request, IBomService service, HttpContext ctx, CancellationToken ct) =>
+        {
+            var updated = await service.ChangeStatusAsync(id, request, ctx.User.ToUserContext(), ct);
+            return updated is null ? Results.NotFound() : Results.Ok(updated);
+        });
+
+        group.MapGet("/{id:guid}/versions", async (Guid id, IBomService service, CancellationToken ct) =>
+            Results.Ok(await service.GetVersionsAsync(id, ct)));
+
+        group.MapGet("/{id:guid}/versions/{versionId:guid}", async (
+            Guid id, Guid versionId, IBomService service, CancellationToken ct) =>
+        {
+            var version = await service.GetVersionAsync(id, versionId, ct);
+            return version is null ? Results.NotFound() : Results.Ok(version);
+        });
+
+        group.MapPost("/{id:guid}/versions", async (
+            Guid id, CreateBomVersionRequest request, IBomService service, HttpContext ctx, CancellationToken ct) =>
+        {
+            var created = await service.CreateVersionAsync(id, request, ctx.User.ToUserContext(), ct);
+            return created is null
+                ? Results.NotFound()
+                : Results.Created($"/api/boms/{id}/versions/{created.Id}", created);
+        }).RequireAuthorization(EditPolicy);
+
+        group.MapPost("/{id:guid}/versions/{versionId:guid}/restore", async (
+            Guid id, Guid versionId, IBomService service, HttpContext ctx, CancellationToken ct) =>
+        {
+            var restored = await service.RestoreVersionAsync(id, versionId, ctx.User.ToUserContext(), ct);
+            return restored ? Results.NoContent() : Results.NotFound();
+        }).RequireAuthorization(UserEndpoints.AdminPolicy);
+
         group.MapDelete("/{id:guid}", async (Guid id, IBomService service, CancellationToken ct) =>
         {
             var deleted = await service.DeleteDocumentAsync(id, ct);

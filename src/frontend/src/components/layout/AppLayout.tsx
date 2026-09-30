@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { AppShell, Badge, Burger, Button, Group, NavLink, ScrollArea, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconFiles, IconLogout, IconRoute, IconSparkles, IconTemplate, IconUsers } from '@tabler/icons-react';
+import { IconFiles, IconListCheck, IconLogout, IconRoute, IconSparkles, IconTemplate, IconUsers } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -100,6 +100,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 leftSection={<IconTemplate size={18} />}
                 active={isActive('/admin/release-templates')}
                 onClick={() => go('/admin/release-templates')}
+              />
+              <NavLink
+                label={t('nav.validationRules')}
+                leftSection={<IconListCheck size={18} />}
+                active={isActive('/admin/validation-rules')}
+                onClick={() => go('/admin/validation-rules')}
               />
               <NavLink
                 label={t('nav.aiSettings')}

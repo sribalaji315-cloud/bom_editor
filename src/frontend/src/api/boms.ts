@@ -2,8 +2,11 @@ import { apiClient } from './client';
 import type {
   BomDocumentDetail,
   BomDocumentSummary,
+  BomDocumentVersionSummary,
   BomAuditEntry,
   BomImportMapping,
+  ChangeBomStatusRequest,
+  CreateBomVersionRequest,
   ImportInspectResult,
 } from '../types/bom';
 
@@ -49,4 +52,29 @@ export async function exportBomDocument(id: string): Promise<Blob> {
 
 export async function deleteBomDocument(id: string): Promise<void> {
   await apiClient.delete(`/boms/${id}`);
+}
+
+export async function changeBomStatus(
+  id: string,
+  request: ChangeBomStatusRequest,
+): Promise<BomDocumentDetail> {
+  const { data } = await apiClient.post<BomDocumentDetail>(`/boms/${id}/status`, request);
+  return data;
+}
+
+export async function getBomVersions(id: string): Promise<BomDocumentVersionSummary[]> {
+  const { data } = await apiClient.get<BomDocumentVersionSummary[]>(`/boms/${id}/versions`);
+  return data;
+}
+
+export async function createBomVersion(
+  id: string,
+  request: CreateBomVersionRequest,
+): Promise<BomDocumentVersionSummary> {
+  const { data } = await apiClient.post<BomDocumentVersionSummary>(`/boms/${id}/versions`, request);
+  return data;
+}
+
+export async function restoreBomVersion(id: string, versionId: string): Promise<void> {
+  await apiClient.post(`/boms/${id}/versions/${versionId}/restore`);
 }
