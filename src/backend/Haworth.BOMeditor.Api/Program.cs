@@ -84,7 +84,11 @@ builder.Services.AddScoped<ICsvExportService, CsvExportService>();
 builder.Services.AddDataProtection();
 builder.Services.AddScoped<IAiSettingsService, AiSettingsService>();
 builder.Services.AddScoped<IAiTranslationService, AiTranslationService>();
+builder.Services.AddScoped<IAiTranslationJobService, AiTranslationJobService>();
 builder.Services.AddScoped<ILlmClientFactory, LlmClientFactory>();
+// Bulk translation runs in the background: one queue, one worker, one job at a time.
+builder.Services.AddSingleton<AiTranslationQueue>();
+builder.Services.AddHostedService<AiTranslationWorker>();
 builder.Services.AddHttpClient<ILlmClient, OpenAiClient>(c => c.Timeout = TimeSpan.FromSeconds(120));
 builder.Services.AddHttpClient<ILlmClient, AnthropicClient>(c => c.Timeout = TimeSpan.FromSeconds(120));
 builder.Services.AddHttpClient<ILlmClient, GeminiClient>(c => c.Timeout = TimeSpan.FromSeconds(120));

@@ -10,5 +10,10 @@ public class AiProviderConfig
     public string Model { get; set; } = string.Empty;
     public string? ApiKeyEncrypted { get; set; }
     public bool Enabled { get; set; }
+    /// <summary>Provider-side id of the uploaded grounding document, so the PDF is not re-sent per call.</summary>
+    public string? GroundingHandle { get; set; }
+    public DateTimeOffset? GroundingHandleExpiresAt { get; set; }
+    /// <summary>Hash of the PDF the handle was created from; a re-upload invalidates it.</summary>
+    public string? GroundingHash { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }

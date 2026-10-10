@@ -11,6 +11,8 @@ public interface IBomService
     Task<BomDocumentDetailDto?> GetDocumentAsync(Guid documentId, CancellationToken ct = default);
     Task<BomLineDto> CreateLineAsync(Guid documentId, CreateBomLineRequest request, UserContext user, CancellationToken ct = default);
     Task<BomLineDto?> UpdateLineAsync(Guid documentId, Guid lineId, UpdateBomLineRequest request, UserContext user, CancellationToken ct = default);
+    /// <summary>Writes AI-translated PLM expressions onto many lines in one pass. Returns the lines changed.</summary>
+    Task<int> ApplyPlmExpressionsAsync(Guid documentId, IReadOnlyList<PlmExpressionUpdate> updates, UserContext user, CancellationToken ct = default);
     Task<bool> DeleteLineAsync(Guid documentId, Guid lineId, UserContext user, CancellationToken ct = default);
     Task<bool> RestoreLineAsync(Guid documentId, Guid lineId, UserContext user, CancellationToken ct = default);
     Task<bool> PurgeLineAsync(Guid documentId, Guid lineId, UserContext user, CancellationToken ct = default);

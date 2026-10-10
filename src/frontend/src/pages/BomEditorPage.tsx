@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -20,6 +20,7 @@ import {
   IconHistory,
   IconListCheck,
   IconPlus,
+  IconSparkles,
   IconVersions,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -28,6 +29,11 @@ import { BomTreeGrid, type BomTreeGridHandle, type MoveDirection } from '../comp
 import { MoveLineModal } from '../components/domain/MoveLineModal';
 import { AddBomModal } from '../components/domain/AddBomModal';
 import { AiTranslateModal } from '../components/domain/AiTranslateModal';
+import {
+  AiBulkTranslateModal,
+  type BulkTranslateSelection,
+} from '../components/domain/AiBulkTranslateModal';
+import { AiJobDrawer } from '../components/domain/AiJobDrawer';
 import { ValidationPanel } from '../components/domain/ValidationPanel';
 import { BomStatusBadge } from '../components/domain/BomStatusBadge';
 import { VersionsDrawer } from '../components/domain/VersionsDrawer';
@@ -43,6 +49,12 @@ import {
 } from '../hooks/useBomVersions';
 import { useReleaseTemplates } from '../hooks/useReleaseTemplates';
 import { useValidateBom } from '../hooks/useValidation';
+import {
+  useApplyTranslationJob,
+  useCancelTranslationJob,
+  useCreateTranslationJob,
+  useLatestTranslationJob,
+} from '../hooks/useAiJobs';
 import {
   useCreateBomLine,
   useDeleteBomLine,
@@ -77,7 +89,7 @@ function conflictMessage(error: unknown): string | null {
 }
 
 export function BomEditorPage() {
-  const { t } = useTranslation(['bom', 'common', 'validation']);
+  const { t } = useTranslation(['bom', 'common', 'validation', 'ai']);
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { canEdit, hasRole } = useAuth();
@@ -94,6 +106,10 @@ export function BomEditorPage() {
   const moveLine = useMoveBomLine(id);
   const insertBom = useInsertBom(id);
   const validateBom = useValidateBom(id);
+  const translationJob = useLatestTranslationJob(id);
+  const createTranslationJob = useCreateTranslationJob();
+  const cancelTranslationJob = useCancelTranslationJob(id);
+  const applyTranslationJob = useApplyTranslationJob(id);
   const changeStatus = useChangeBomStatus(id);
   const createVersion = useCreateBomVersion(id);
   const restoreVersion = useRestoreBomVersion(id);
@@ -109,8 +125,11 @@ export function BomEditorPage() {
   const [translateTarget, setTranslateTarget] = useState<{ line: BomLine; field: AiFieldType } | null>(
     null,
   );
+  const [bulkTranslateOpen, setBulkTranslateOpen] = useState(false);
+  const [jobDrawerOpen, setJobDrawerOpen] = useState(false);
+  const lastJobStatus = useRef<string | null>(null);
 
-  const lines = document?.lines ?? [];
+  const lines = useMemo(() => document?.lines ?? [], [document]);
   const status = document?.status ?? 'Draft';
   // Only drafts are editable; everything else is frozen for review.
   const canEditNow = canEdit && status === 'Draft';
@@ -275,6 +294,87 @@ export function BomEditorPage() {
     handleUpdate(line.id, request);
   };
 
+  const bulkTranslateRows = useMemo(
+    () =>
+      lines
+        .filter((line) => !line.isDeleted && (line.conditions?.trim() || line.formula?.trim()))
+        .map((line) => ({
+          id: line.id,
+          label: line.description || line.bsObjectId || line.position || line.id,
+          condition: line.conditions,
+          formula: line.formula,
+          conditionPlm: line.conditionsPlm,
+          formulaPlm: line.formulaPlm,
+        })),
+    [lines],
+  );
+
+  const job = translationJob.data ?? null;
+  const jobRunning = job?.status === 'Queued' || job?.status === 'Running';
+  const lineLabels = useMemo(
+    () =>
+      new Map(
+        lines.map((line) => [line.id, line.description || line.bsObjectId || line.position || line.id]),
+      ),
+    [lines],
+  );
+
+  // Announce a finished run once, without storing it in state.
+  useEffect(() => {
+    if (!job) return;
+    const previous = lastJobStatus.current;
+    lastJobStatus.current = job.status;
+    if (previous === null || previous === job.status) return;
+    if (job.status === 'Completed') {
+      notifications.show({ color: 'nordGreen', message: t('job.completed', { ns: 'ai' }) });
+    } else if (job.status === 'Failed') {
+      notifications.show({ color: 'nordRed', message: t('job.failed', { ns: 'ai' }) });
+    }
+  }, [job, t]);
+
+  const handleStartTranslationJob = (items: BulkTranslateSelection[]) => {
+    createTranslationJob.mutate(
+      { context: 'Bom', targetId: id, items },
+      {
+        onSuccess: () => {
+          setBulkTranslateOpen(false);
+          setJobDrawerOpen(true);
+          notifications.show({ color: 'nordGreen', message: t('bulk.started', { ns: 'ai' }) });
+        },
+        onError: (error) =>
+          notifications.show({
+            color: 'nordRed',
+            message: conflictMessage(error) ?? t('bulk.startFailed', { ns: 'ai' }),
+          }),
+      },
+    );
+  };
+
+  const handleCancelTranslationJob = (jobId: string) => {
+    cancelTranslationJob.mutate(jobId, {
+      onSuccess: () => notifications.show({ color: 'nordAmber', message: t('job.cancelled', { ns: 'ai' }) }),
+      onError: () => notifications.show({ color: 'nordRed', message: t('job.cancelFailed', { ns: 'ai' }) }),
+    });
+  };
+
+  const handleApplyTranslationJob = (jobId: string, itemIds: string[]) => {
+    applyTranslationJob.mutate(
+      { jobId, itemIds },
+      {
+        onSuccess: (result) =>
+          notifications.show({
+            color: 'nordGreen',
+            message: t('job.applied', { ns: 'ai', n: result.applied }),
+          }),
+        onError: (error) =>
+          notifications.show({
+            color: 'nordRed',
+            message: conflictMessage(error) ?? t('job.applyFailed', { ns: 'ai' }),
+          }),
+      },
+    );
+  };
+
   const handleMove = async (line: BomLine, direction: MoveDirection) => {
     const siblings = siblingsOf(lines, line);
     const index = siblings.findIndex((s) => s.id === line.id);
@@ -426,6 +526,36 @@ export function BomEditorPage() {
               {t('editor.addBom')}
             </Button>
           )}
+          {canEditNow && (
+            <Button
+              variant="light"
+              color="nordTeal"
+              leftSection={<IconSparkles size={16} />}
+              onClick={() => (jobRunning || job ? setJobDrawerOpen(true) : setBulkTranslateOpen(true))}
+              rightSection={
+                jobRunning ? (
+                  <Badge size="sm" color="nordTeal">
+                    {job?.status === 'Queued'
+                      ? t('job.queued', { ns: 'ai' })
+                      : `${(job?.completedItems ?? 0) + (job?.failedItems ?? 0)}/${job?.totalItems ?? 0}`}
+                  </Badge>
+                ) : undefined
+              }
+            >
+              {jobRunning || job ? t('job.open', { ns: 'ai' }) : t('bulk.open', { ns: 'ai' })}
+            </Button>
+          )}
+          {canEditNow && job && (
+            <Button
+              variant="subtle"
+              color="nordTeal"
+              leftSection={<IconSparkles size={16} />}
+              disabled={jobRunning}
+              onClick={() => setBulkTranslateOpen(true)}
+            >
+              {t('bulk.open', { ns: 'ai' })}
+            </Button>
+          )}
           <Tooltip label={t('versions.open')}>
             <ActionIcon variant="light" size="lg" onClick={() => setVersionsOpen(true)}>
               <IconVersions size={18} />
@@ -501,6 +631,26 @@ export function BomEditorPage() {
         lines={lines}
         onClose={() => setAddBomOpen(false)}
         onConfirm={handleInsertBom}
+      />
+
+      <AiBulkTranslateModal
+        opened={bulkTranslateOpen}
+        rows={bulkTranslateRows}
+        starting={createTranslationJob.isPending}
+        onClose={() => setBulkTranslateOpen(false)}
+        onStart={handleStartTranslationJob}
+      />
+
+      <AiJobDrawer
+        opened={jobDrawerOpen}
+        job={job}
+        labels={lineLabels}
+        canEdit={canEditNow}
+        cancelling={cancelTranslationJob.isPending}
+        applying={applyTranslationJob.isPending}
+        onClose={() => setJobDrawerOpen(false)}
+        onCancel={handleCancelTranslationJob}
+        onApply={handleApplyTranslationJob}
       />
 
       <HelpPanel opened={helpOpen} onClose={() => setHelpOpen(false)} canEdit={canEdit} />

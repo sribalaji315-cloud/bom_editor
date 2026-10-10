@@ -43,6 +43,48 @@ public static class AiEndpoints
             catch (InvalidOperationException ex) { return Results.BadRequest(ex.Message); }
         }).RequireAuthorization(BomEndpoints.EditPolicy);
 
+        group.MapPost("/translate-jobs", async (
+            CreateTranslationJobRequest request, IAiTranslationJobService service,
+            HttpContext ctx, CancellationToken ct) =>
+        {
+            try
+            {
+                var job = await service.CreateAsync(request, ctx.User.ToUserContext(), ct);
+                return Results.Accepted($"/api/ai/translate-jobs/{job.Id}", job);
+            }
+            catch (KeyNotFoundException) { return Results.NotFound(); }
+            catch (InvalidOperationException ex) { return Results.BadRequest(ex.Message); }
+        }).RequireAuthorization(BomEndpoints.EditPolicy);
+
+        group.MapGet("/translate-jobs/{id:guid}", async (
+            Guid id, IAiTranslationJobService service, CancellationToken ct) =>
+        {
+            var job = await service.GetAsync(id, ct);
+            return job is null ? Results.NotFound() : Results.Ok(job);
+        });
+
+        group.MapGet("/translate-jobs", async (
+            Guid targetId, IAiTranslationJobService service, CancellationToken ct) =>
+        {
+            var job = await service.GetLatestForTargetAsync(targetId, ct);
+            return job is null ? Results.NoContent() : Results.Ok(job);
+        });
+
+        group.MapPost("/translate-jobs/{id:guid}/cancel", async (
+            Guid id, IAiTranslationJobService service, CancellationToken ct) =>
+        {
+            var cancelled = await service.CancelAsync(id, ct);
+            return cancelled ? Results.NoContent() : Results.NotFound();
+        }).RequireAuthorization(BomEndpoints.EditPolicy);
+
+        group.MapPost("/translate-jobs/{id:guid}/apply", async (
+            Guid id, ApplyTranslationJobRequest request, IAiTranslationJobService service,
+            HttpContext ctx, CancellationToken ct) =>
+        {
+            var result = await service.ApplyAsync(id, request, ctx.User.ToUserContext(), ct);
+            return result is null ? Results.NotFound() : Results.Ok(result);
+        }).RequireAuthorization(BomEndpoints.EditPolicy);
+
         return app;
     }
 }

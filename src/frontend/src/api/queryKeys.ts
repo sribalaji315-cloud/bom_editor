@@ -37,5 +37,7 @@ export const queryKeys = {
   ai: {
     all: ['ai'] as const,
     settings: () => [...queryKeys.ai.all, 'settings'] as const,
+    job: (id: string) => [...queryKeys.ai.all, 'job', id] as const,
+    jobForTarget: (targetId: string) => [...queryKeys.ai.all, 'job', 'target', targetId] as const,
   },
 };

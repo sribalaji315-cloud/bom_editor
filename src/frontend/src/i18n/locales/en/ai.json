@@ -47,5 +47,51 @@
     "apply": "Apply",
     "failed": "Translation failed.",
     "empty": "Enter a description to translate."
+  },
+  "bulk": {
+    "title": "AI translate conditions & formulas",
+    "open": "Translate all with AI",
+    "description": "Queues every selected plain-language condition and formula for translation into Bluestar PLM syntax. The run continues in the background — you can close the page and review the suggestions later.",
+    "onlyEmpty": "Only cells with no PLM value yet",
+    "selectedCount": "{{n}} cell(s) selected",
+    "selectAll": "Select all",
+    "nothingToTranslate": "No plain-language conditions or formulas to translate.",
+    "noneSelected": "Select at least one cell to translate.",
+    "start": "Translate {{n}} cell(s) in background",
+    "started": "Translation started. You can keep working.",
+    "startFailed": "Could not start the translation run.",
+    "columns": {
+      "row": "Line",
+      "field": "Field",
+      "source": "Plain language",
+      "current": "Current PLM value",
+      "result": "Suggestion"
+    }
+  },
+  "job": {
+    "title": "AI translation run",
+    "none": "No translation run yet for this document.",
+    "open": "View translation run",
+    "queued": "Queued",
+    "queuedAhead": "Queued — {{n}} run(s) ahead of this one.",
+    "startingShortly": "Queued — starting shortly.",
+    "progress": "{{done}} of {{total}} translated ({{failed}} failed).",
+    "pending": "Waiting…",
+    "cancel": "Stop",
+    "cancelled": "Translation run stopped.",
+    "cancelFailed": "Could not stop the run.",
+    "apply": "Apply {{n}} suggestion(s)",
+    "applied": "{{n}} line(s) updated.",
+    "applyFailed": "Could not apply the suggestions.",
+    "itemApplied": "Applied",
+    "completed": "Translation run finished.",
+    "failed": "Translation run failed.",
+    "status": {
+      "Queued": "Queued",
+      "Running": "Running",
+      "Completed": "Completed",
+      "Failed": "Failed",
+      "Cancelled": "Stopped"
+    }
   }
 }

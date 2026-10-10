@@ -104,6 +104,55 @@ public class BomService(AppDbContext db, IBomValidationService validation) : IBo
         return ToDto(line, await ComputeLevelAsync(line.Id, ct));
     }
 
+    public async Task<int> ApplyPlmExpressionsAsync(
+        Guid documentId, IReadOnlyList<PlmExpressionUpdate> updates, UserContext user, CancellationToken ct = default)
+    {
+        if (updates.Count == 0) return 0;
+
+        var document = await db.BomDocuments.FirstOrDefaultAsync(d => d.Id == documentId, ct)
+            ?? throw new KeyNotFoundException("BOM document not found.");
+        EnsureEditable(document);
+
+        var ids = updates.Select(u => u.LineId).ToHashSet();
+        var lines = await db.BomLines
+            .Where(l => l.BomDocumentId == documentId && ids.Contains(l.Id))
+            .ToListAsync(ct);
+        var byId = lines.ToDictionary(l => l.Id);
+
+        var applied = 0;
+        foreach (var update in updates)
+        {
+            if (!byId.TryGetValue(update.LineId, out var line) || line.IsDeleted) continue;
+
+            var changed = false;
+            if (update.ConditionPlm is string conditions && line.ConditionsPlm != conditions)
+            {
+                AddAudit(documentId, line.Id, user, AuditChangeType.Update,
+                    nameof(BomLineFields.ConditionsPlm), line.ConditionsPlm, conditions);
+                line.ConditionsPlm = conditions;
+                changed = true;
+            }
+            if (update.FormulaPlm is string formula && line.FormulaPlm != formula)
+            {
+                AddAudit(documentId, line.Id, user, AuditChangeType.Update,
+                    nameof(BomLineFields.FormulaPlm), line.FormulaPlm, formula);
+                line.FormulaPlm = formula;
+                changed = true;
+            }
+
+            if (!changed) continue;
+            line.ConcurrencyStamp = Guid.NewGuid();
+            applied++;
+        }
+
+        if (applied > 0)
+        {
+            Touch(document);
+            await db.SaveChangesAsync(ct);
+        }
+        return applied;
+    }
+
     public async Task<bool> DeleteLineAsync(
         Guid documentId, Guid lineId, UserContext user, CancellationToken ct = default)
     {

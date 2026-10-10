@@ -37,4 +37,6 @@ public record ResolvedProvider(
     string Model,
     string ApiKey,
     byte[]? GroundingPdf,
-    string? GroundingFileName);
+    string? GroundingFileName,
+    string? GroundingHandle = null,
+    string? GroundingHash = null);

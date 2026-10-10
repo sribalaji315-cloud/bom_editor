@@ -5,12 +5,15 @@ using Haworth.BOMeditor.Core.Interfaces;
 
 namespace Haworth.BOMeditor.Api.Services.Llm;
 
-/// <summary>Anthropic Claude provider via the Messages API; grounding PDF sent as a document block.</summary>
+/// <summary>
+/// Anthropic Claude provider via the Messages API. The grounding PDF stays inline but is marked
+/// cacheable, so consecutive calls in a batch reuse the provider's prompt cache instead of re-parsing it.
+/// </summary>
 public class AnthropicClient(HttpClient http) : ILlmClient
 {
     public AiProvider Provider => AiProvider.Anthropic;
 
-    public async Task<string> CompleteAsync(LlmRequest request, CancellationToken ct = default)
+    public async Task<LlmResponse> CompleteAsync(LlmRequest request, CancellationToken ct = default)
     {
         var userContent = new List<object>();
         if (request.GroundingPdf is { Length: > 0 })
@@ -18,7 +21,8 @@ public class AnthropicClient(HttpClient http) : ILlmClient
             userContent.Add(new
             {
                 type = "document",
-                source = new { type = "base64", media_type = "application/pdf", data = Convert.ToBase64String(request.GroundingPdf) }
+                source = new { type = "base64", media_type = "application/pdf", data = Convert.ToBase64String(request.GroundingPdf) },
+                cache_control = new { type = "ephemeral" }
             });
         }
         userContent.Add(new { type = "text", text = request.UserPrompt });
@@ -52,6 +56,7 @@ public class AnthropicClient(HttpClient http) : ILlmClient
                     sb.Append(txt.GetString());
             }
         }
-        return sb.ToString().Trim();
+        // The cache is provider-side and short-lived, so there is no handle to persist.
+        return new LlmResponse(sb.ToString().Trim(), null, null);
     }
 }

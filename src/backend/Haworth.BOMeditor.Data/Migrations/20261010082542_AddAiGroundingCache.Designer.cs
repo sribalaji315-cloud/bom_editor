@@ -3,6 +3,7 @@ using System;
 using Haworth.BOMeditor.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Haworth.BOMeditor.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261010082542_AddAiGroundingCache")]
+    partial class AddAiGroundingCache
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -110,104 +113,6 @@ namespace Haworth.BOMeditor.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AiSettings");
-                });
-
-            modelBuilder.Entity("Haworth.BOMeditor.Core.Domain.AiTranslationJob", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<long?>("CompletedAt")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("CompletedItems")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Context")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("TEXT");
-
-                    b.Property<long>("CreatedAt")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Error")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("FailedItems")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Model")
-                        .HasMaxLength(128)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Provider")
-                        .HasMaxLength(32)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("RequestedByUserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("RequestedByUserName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<long?>("StartedAt")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("TargetId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("TotalItems")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TargetId", "CreatedAt");
-
-                    b.ToTable("AiTranslationJobs");
-                });
-
-            modelBuilder.Entity("Haworth.BOMeditor.Core.Domain.AiTranslationJobItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<long?>("AppliedAt")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Error")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Expression")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("FieldType")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("JobId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("SourceText")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("TargetLineId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("JobId");
-
-                    b.ToTable("AiTranslationJobItems");
                 });
 
             modelBuilder.Entity("Haworth.BOMeditor.Core.Domain.BomAuditEntry", b =>
@@ -917,17 +822,6 @@ namespace Haworth.BOMeditor.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Haworth.BOMeditor.Core.Domain.AiTranslationJobItem", b =>
-                {
-                    b.HasOne("Haworth.BOMeditor.Core.Domain.AiTranslationJob", "Job")
-                        .WithMany("Items")
-                        .HasForeignKey("JobId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Job");
-                });
-
             modelBuilder.Entity("Haworth.BOMeditor.Core.Domain.BomLine", b =>
                 {
                     b.HasOne("Haworth.BOMeditor.Core.Domain.BomDocument", "BomDocument")
@@ -1006,11 +900,6 @@ namespace Haworth.BOMeditor.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Haworth.BOMeditor.Core.Domain.AiTranslationJob", b =>
-                {
-                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Haworth.BOMeditor.Core.Domain.BomDocument", b =>

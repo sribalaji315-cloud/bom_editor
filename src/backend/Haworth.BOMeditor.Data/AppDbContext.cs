@@ -23,6 +23,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<AiProviderConfig> AiProviderConfigs => Set<AiProviderConfig>();
     public DbSet<AiInstruction> AiInstructions => Set<AiInstruction>();
     public DbSet<AiSetting> AiSettings => Set<AiSetting>();
+    public DbSet<AiTranslationJob> AiTranslationJobs => Set<AiTranslationJob>();
+    public DbSet<AiTranslationJobItem> AiTranslationJobItems => Set<AiTranslationJobItem>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder builder)
     {
@@ -132,6 +134,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasKey(c => c.Id);
             e.Property(c => c.Provider).HasConversion<string>().HasMaxLength(32);
             e.Property(c => c.Model).IsRequired().HasMaxLength(128);
+            e.Property(c => c.GroundingHandle).HasMaxLength(512);
+            e.Property(c => c.GroundingHash).HasMaxLength(64);
             e.HasIndex(c => c.Provider).IsUnique();
         });
 
@@ -147,6 +151,27 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             e.HasKey(s => s.Id);
             e.Property(s => s.ActiveProvider).HasConversion<string>().HasMaxLength(32);
+        });
+
+        builder.Entity<AiTranslationJob>(e =>
+        {
+            e.HasKey(j => j.Id);
+            e.Property(j => j.Context).HasConversion<string>().HasMaxLength(16);
+            e.Property(j => j.Status).HasConversion<string>().HasMaxLength(16);
+            e.Property(j => j.Provider).HasConversion<string>().HasMaxLength(32);
+            e.Property(j => j.Model).HasMaxLength(128);
+            e.HasIndex(j => new { j.TargetId, j.CreatedAt });
+            e.HasMany(j => j.Items)
+                .WithOne(i => i.Job)
+                .HasForeignKey(i => i.JobId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AiTranslationJobItem>(e =>
+        {
+            e.HasKey(i => i.Id);
+            e.Property(i => i.FieldType).IsRequired().HasMaxLength(16);
+            e.Property(i => i.SourceText).IsRequired();
         });
     }
 }

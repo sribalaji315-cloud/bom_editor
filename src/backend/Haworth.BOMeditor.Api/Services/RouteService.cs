@@ -160,6 +160,52 @@ public class RouteService(AppDbContext db) : IRouteService
         return ToOperationDto(operation);
     }
 
+    public async Task<int> ApplyPlmExpressionsAsync(
+        Guid routeId, IReadOnlyList<PlmExpressionUpdate> updates, UserContext user, CancellationToken ct = default)
+    {
+        if (updates.Count == 0) return 0;
+
+        var route = await db.Routes.FirstOrDefaultAsync(r => r.Id == routeId, ct)
+            ?? throw new KeyNotFoundException("Route not found.");
+
+        var ids = updates.Select(u => u.LineId).ToHashSet();
+        var operations = await db.RouteOperations
+            .Where(o => o.RouteId == routeId && ids.Contains(o.Id))
+            .ToListAsync(ct);
+        var byId = operations.ToDictionary(o => o.Id);
+
+        var applied = 0;
+        foreach (var update in updates)
+        {
+            if (!byId.TryGetValue(update.LineId, out var operation)) continue;
+
+            var changed = false;
+            if (update.ConditionPlm is string condition && operation.ConditionPlm != condition)
+            {
+                AddAudit(routeId, operation.Id, user, AuditChangeType.Update,
+                    nameof(RouteOperationFields.ConditionPlm), operation.ConditionPlm, condition);
+                operation.ConditionPlm = condition;
+                changed = true;
+            }
+            if (update.FormulaPlm is string formula && operation.FormulaPlm != formula)
+            {
+                AddAudit(routeId, operation.Id, user, AuditChangeType.Update,
+                    nameof(RouteOperationFields.FormulaPlm), operation.FormulaPlm, formula);
+                operation.FormulaPlm = formula;
+                changed = true;
+            }
+
+            if (changed) applied++;
+        }
+
+        if (applied > 0)
+        {
+            Touch(route);
+            await db.SaveChangesAsync(ct);
+        }
+        return applied;
+    }
+
     public async Task<bool> DeleteOperationAsync(
         Guid routeId, Guid operationId, UserContext user, CancellationToken ct = default)
     {

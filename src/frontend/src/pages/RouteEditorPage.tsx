@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActionIcon,
+  Badge,
   Button,
   Card,
   Drawer,
@@ -21,6 +22,7 @@ import {
   IconHelp,
   IconHistory,
   IconPlus,
+  IconSparkles,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -28,12 +30,23 @@ import { RouteOperationsGrid, type MoveDirection } from '../components/domain/Ro
 import { RouteHelpPanel } from '../components/domain/RouteHelpPanel';
 import { AiTranslateModal } from '../components/domain/AiTranslateModal';
 import {
+  AiBulkTranslateModal,
+  type BulkTranslateSelection,
+} from '../components/domain/AiBulkTranslateModal';
+import { AiJobDrawer } from '../components/domain/AiJobDrawer';
+import {
   OperationRequestModal,
   type OperationRequestValues,
 } from '../components/domain/OperationRequestModal';
 import { useAuth } from '../context/AuthContext';
 import { useRoute, useRouteAudit } from '../hooks/useRoutes';
 import { useRequestOperation, useSelectableOperations } from '../hooks/useOperations';
+import {
+  useApplyTranslationJob,
+  useCancelTranslationJob,
+  useCreateTranslationJob,
+  useLatestTranslationJob,
+} from '../hooks/useAiJobs';
 import {
   useCreateRouteOperation,
   useDeleteRouteOperation,
@@ -56,8 +69,34 @@ const EMPTY_HEADER: RouteHeaderFields = {
   isActive: true,
 };
 
+function toUpdateRequest(
+  operation: RouteOperation,
+  overrides: Partial<UpdateRouteOperationRequest>,
+): UpdateRouteOperationRequest {
+  return {
+    operationNo: operation.operationNo,
+    operationId: operation.operationId,
+    description: operation.description,
+    descriptionLen: operation.descriptionLen,
+    nextOperation: operation.nextOperation,
+    swingWc: operation.swingWc,
+    runtimeType: operation.runtimeType,
+    setUpTime: operation.setUpTime,
+    time: operation.time,
+    resourceId: operation.resourceId,
+    resourceGroup: operation.resourceGroup,
+    routeGroupId: operation.routeGroupId,
+    priority: operation.priority,
+    condition: operation.condition,
+    conditionPlm: operation.conditionPlm,
+    formula: operation.formula,
+    formulaPlm: operation.formulaPlm,
+    ...overrides,
+  };
+}
+
 export function RouteEditorPage() {
-  const { t } = useTranslation(['route', 'common', 'operations']);
+  const { t } = useTranslation(['route', 'common', 'operations', 'ai']);
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { canEdit } = useAuth();
@@ -79,6 +118,13 @@ export function RouteEditorPage() {
     operation: RouteOperation;
     field: AiFieldType;
   } | null>(null);
+  const [bulkTranslateOpen, setBulkTranslateOpen] = useState(false);
+  const [jobDrawerOpen, setJobDrawerOpen] = useState(false);
+  const lastJobStatus = useRef<string | null>(null);
+  const translationJob = useLatestTranslationJob(id);
+  const createTranslationJob = useCreateTranslationJob();
+  const cancelTranslationJob = useCancelTranslationJob(id);
+  const applyTranslationJob = useApplyTranslationJob(id);
 
   const [header, setHeader] = useState<RouteHeaderFields>(EMPTY_HEADER);
   const [loadedId, setLoadedId] = useState<string | null>(null);
@@ -94,7 +140,7 @@ export function RouteEditorPage() {
     });
   }
 
-  const operations = route?.operations ?? [];
+  const operations = useMemo(() => route?.operations ?? [], [route]);
 
   const notifySaved = () =>
     notifications.show({ color: 'nordGreen', message: t('editor.saved') });
@@ -138,26 +184,84 @@ export function RouteEditorPage() {
   const applyTranslation = (expression: string) => {
     if (!translateTarget) return;
     const { operation, field } = translateTarget;
-    const request: UpdateRouteOperationRequest = {
-      operationNo: operation.operationNo,
-      operationId: operation.operationId,
-      description: operation.description,
-      descriptionLen: operation.descriptionLen,
-      nextOperation: operation.nextOperation,
-      swingWc: operation.swingWc,
-      runtimeType: operation.runtimeType,
-      setUpTime: operation.setUpTime,
-      time: operation.time,
-      resourceId: operation.resourceId,
-      resourceGroup: operation.resourceGroup,
-      routeGroupId: operation.routeGroupId,
-      priority: operation.priority,
-      condition: operation.condition,
-      conditionPlm: field === 'condition' ? expression : operation.conditionPlm,
-      formula: operation.formula,
-      formulaPlm: field === 'formula' ? expression : operation.formulaPlm,
-    };
+    const request = toUpdateRequest(
+      operation,
+      field === 'condition' ? { conditionPlm: expression } : { formulaPlm: expression },
+    );
     handleUpdateOperation(operation.id, request);
+  };
+
+  const bulkTranslateRows = useMemo(
+    () =>
+      operations
+        .filter((operation) => operation.condition?.trim() || operation.formula?.trim())
+        .map((operation) => ({
+          id: operation.id,
+          label: operation.operationNo || operation.operationId || operation.description || operation.id,
+          condition: operation.condition,
+          formula: operation.formula,
+          conditionPlm: operation.conditionPlm,
+          formulaPlm: operation.formulaPlm,
+        })),
+    [operations],
+  );
+
+  const job = translationJob.data ?? null;
+  const jobRunning = job?.status === 'Queued' || job?.status === 'Running';
+  const operationLabels = useMemo(
+    () =>
+      new Map(
+        operations.map((o) => [o.id, o.operationNo || o.operationId || o.description || o.id]),
+      ),
+    [operations],
+  );
+
+  // Announce a finished run once, without storing it in state.
+  useEffect(() => {
+    if (!job) return;
+    const previous = lastJobStatus.current;
+    lastJobStatus.current = job.status;
+    if (previous === null || previous === job.status) return;
+    if (job.status === 'Completed') {
+      notifications.show({ color: 'nordGreen', message: t('job.completed', { ns: 'ai' }) });
+    } else if (job.status === 'Failed') {
+      notifications.show({ color: 'nordRed', message: t('job.failed', { ns: 'ai' }) });
+    }
+  }, [job, t]);
+
+  const handleStartTranslationJob = (items: BulkTranslateSelection[]) => {
+    createTranslationJob.mutate(
+      { context: 'Route', targetId: id, items },
+      {
+        onSuccess: () => {
+          setBulkTranslateOpen(false);
+          setJobDrawerOpen(true);
+          notifications.show({ color: 'nordGreen', message: t('bulk.started', { ns: 'ai' }) });
+        },
+        onError: (error) => notifyFailed(error),
+      },
+    );
+  };
+
+  const handleCancelTranslationJob = (jobId: string) => {
+    cancelTranslationJob.mutate(jobId, {
+      onSuccess: () => notifications.show({ color: 'nordAmber', message: t('job.cancelled', { ns: 'ai' }) }),
+      onError: (error) => notifyFailed(error),
+    });
+  };
+
+  const handleApplyTranslationJob = (jobId: string, itemIds: string[]) => {
+    applyTranslationJob.mutate(
+      { jobId, itemIds },
+      {
+        onSuccess: (result) =>
+          notifications.show({
+            color: 'nordGreen',
+            message: t('job.applied', { ns: 'ai', n: result.applied }),
+          }),
+        onError: (error) => notifyFailed(error),
+      },
+    );
   };
 
   const handleDeleteOperation = (operation: RouteOperation) => {
@@ -216,6 +320,36 @@ export function RouteEditorPage() {
               onClick={handleAddOperation}
             >
               {t('editor.addOperation')}
+            </Button>
+          )}
+          {canEdit && (
+            <Button
+              variant="light"
+              color="nordTeal"
+              leftSection={<IconSparkles size={16} />}
+              onClick={() => (job ? setJobDrawerOpen(true) : setBulkTranslateOpen(true))}
+              rightSection={
+                jobRunning ? (
+                  <Badge size="sm" color="nordTeal">
+                    {job?.status === 'Queued'
+                      ? t('job.queued', { ns: 'ai' })
+                      : `${(job?.completedItems ?? 0) + (job?.failedItems ?? 0)}/${job?.totalItems ?? 0}`}
+                  </Badge>
+                ) : undefined
+              }
+            >
+              {job ? t('job.open', { ns: 'ai' }) : t('bulk.open', { ns: 'ai' })}
+            </Button>
+          )}
+          {canEdit && job && (
+            <Button
+              variant="subtle"
+              color="nordTeal"
+              leftSection={<IconSparkles size={16} />}
+              disabled={jobRunning}
+              onClick={() => setBulkTranslateOpen(true)}
+            >
+              {t('bulk.open', { ns: 'ai' })}
             </Button>
           )}
           <Tooltip label={t('audit.title')}>
@@ -299,6 +433,26 @@ export function RouteEditorPage() {
         loading={requestOperation.isPending}
         onClose={() => setRequestOpen(false)}
         onSubmit={handleRequestOperation}
+      />
+
+      <AiBulkTranslateModal
+        opened={bulkTranslateOpen}
+        rows={bulkTranslateRows}
+        starting={createTranslationJob.isPending}
+        onClose={() => setBulkTranslateOpen(false)}
+        onStart={handleStartTranslationJob}
+      />
+
+      <AiJobDrawer
+        opened={jobDrawerOpen}
+        job={job}
+        labels={operationLabels}
+        canEdit={canEdit}
+        cancelling={cancelTranslationJob.isPending}
+        applying={applyTranslationJob.isPending}
+        onClose={() => setJobDrawerOpen(false)}
+        onCancel={handleCancelTranslationJob}
+        onApply={handleApplyTranslationJob}
       />
 
       {translateTarget && (

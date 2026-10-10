@@ -46,8 +46,29 @@ public static class DbSeeder
         }
 
         await SeedAiDefaultsAsync(db);
+        await RecoverAiJobsAsync(db);
         await SeedValidationRulesAsync(db);
         await SeedOperationsAsync(db);
+    }
+
+    /// <summary>
+    /// The translation queue lives in this process, so anything still queued or running was killed by
+    /// a restart and can never resume.
+    /// </summary>
+    private static async Task RecoverAiJobsAsync(AppDbContext db)
+    {
+        var interrupted = await db.AiTranslationJobs
+            .Where(j => j.Status == AiJobStatus.Queued || j.Status == AiJobStatus.Running)
+            .ToListAsync();
+        if (interrupted.Count == 0) return;
+
+        foreach (var job in interrupted)
+        {
+            job.Status = AiJobStatus.Failed;
+            job.Error = "Interrupted by a server restart.";
+            job.CompletedAt = DateTimeOffset.UtcNow;
+        }
+        await db.SaveChangesAsync();
     }
 
     /// <summary>

@@ -16,6 +16,8 @@ public interface IRouteService
     Task<bool> DeleteRouteAsync(Guid routeId, UserContext user, CancellationToken ct = default);
     Task<RouteOperationDto> CreateOperationAsync(Guid routeId, CreateRouteOperationRequest request, UserContext user, CancellationToken ct = default);
     Task<RouteOperationDto?> UpdateOperationAsync(Guid routeId, Guid operationId, UpdateRouteOperationRequest request, UserContext user, CancellationToken ct = default);
+    /// <summary>Writes AI-translated PLM expressions onto many operations in one pass. Returns the operations changed.</summary>
+    Task<int> ApplyPlmExpressionsAsync(Guid routeId, IReadOnlyList<PlmExpressionUpdate> updates, UserContext user, CancellationToken ct = default);
     Task<bool> DeleteOperationAsync(Guid routeId, Guid operationId, UserContext user, CancellationToken ct = default);
     Task<bool> MoveOperationAsync(Guid routeId, Guid operationId, MoveRouteOperationRequest request, UserContext user, CancellationToken ct = default);
     Task<IReadOnlyList<RouteAuditEntryDto>> GetAuditAsync(Guid routeId, CancellationToken ct = default);

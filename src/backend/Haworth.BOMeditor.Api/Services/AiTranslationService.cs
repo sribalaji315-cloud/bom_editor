@@ -22,22 +22,21 @@ public class AiTranslationService(
         if (string.IsNullOrWhiteSpace(request.NaturalLanguage))
             throw new InvalidOperationException("Natural language text is required.");
 
+        var runner = await CreateRunnerAsync(request.Context, ct);
+        var expression = await runner.TranslateAsync(request.FieldType, request.NaturalLanguage, ct);
+        return new TranslateResponse(expression, runner.Provider, runner.Model);
+    }
+
+    public async Task<IAiTranslationRunner> CreateRunnerAsync(AiContext context, CancellationToken ct = default)
+    {
         var resolved = await settings.ResolveProviderAsync(null, ct);
         var instruction = await db.AiInstructions
-            .Where(i => i.Context == request.Context)
+            .Where(i => i.Context == context)
             .Select(i => i.SystemInstructions)
             .FirstOrDefaultAsync(ct) ?? string.Empty;
-
-        var fieldType = string.Equals(request.FieldType, "formula", StringComparison.OrdinalIgnoreCase) ? "formula" : "condition";
         var system = string.IsNullOrWhiteSpace(instruction) ? SyntaxGrounding : $"{SyntaxGrounding}\n\n{instruction}";
-        var user = $"Translate the following into a Bluestar PLM {request.Context} {fieldType}. " +
-                   $"Return only the {fieldType} expression.\n\n{request.NaturalLanguage}";
 
-        var client = clientFactory.Create(resolved.Provider);
-        var expression = await client.CompleteAsync(
-            new LlmRequest(system, user, resolved.Model, resolved.ApiKey, resolved.GroundingPdf, resolved.GroundingFileName), ct);
-
-        return new TranslateResponse(expression, resolved.Provider, resolved.Model);
+        return new AiTranslationRunner(settings, clientFactory.Create(resolved.Provider), resolved, system, context);
     }
 
     public async Task<TestProviderResponse> TestAsync(AiProvider provider, CancellationToken ct = default)
@@ -49,11 +48,48 @@ public class AiTranslationService(
             // Minimal ungrounded round-trip to validate credentials and model.
             var reply = await client.CompleteAsync(
                 new LlmRequest("You are a connectivity test.", "Reply with the single word OK.", resolved.Model, resolved.ApiKey, null, null), ct);
-            return new TestProviderResponse(true, string.IsNullOrWhiteSpace(reply) ? "Connected." : reply.Trim());
+            return new TestProviderResponse(true, string.IsNullOrWhiteSpace(reply.Text) ? "Connected." : reply.Text.Trim());
         }
         catch (Exception ex)
         {
             return new TestProviderResponse(false, ex.Message);
+        }
+    }
+
+    /// <summary>Holds the resolved provider and the current grounding handle across many cells.</summary>
+    private sealed class AiTranslationRunner(
+        IAiSettingsService settings,
+        ILlmClient client,
+        ResolvedProvider resolved,
+        string systemInstructions,
+        AiContext context) : IAiTranslationRunner
+    {
+        private string? _groundingHandle = resolved.GroundingHandle;
+
+        public AiProvider Provider => resolved.Provider;
+        public string Model => resolved.Model;
+
+        public async Task<string> TranslateAsync(
+            string fieldType, string naturalLanguage, CancellationToken ct = default)
+        {
+            var field = string.Equals(fieldType, "formula", StringComparison.OrdinalIgnoreCase) ? "formula" : "condition";
+            var prompt = $"Translate the following into a Bluestar PLM {context} {field}. " +
+                         $"Return only the {field} expression.\n\n{naturalLanguage}";
+
+            var response = await client.CompleteAsync(
+                new LlmRequest(
+                    systemInstructions, prompt, resolved.Model, resolved.ApiKey,
+                    resolved.GroundingPdf, resolved.GroundingFileName, _groundingHandle),
+                ct);
+
+            if (response.GroundingHandle is not null)
+            {
+                _groundingHandle = response.GroundingHandle;
+                await settings.SaveGroundingHandleAsync(
+                    resolved.Provider, response.GroundingHandle, response.GroundingExpiresAt, resolved.GroundingHash, ct);
+            }
+
+            return response.Text;
         }
     }
 }

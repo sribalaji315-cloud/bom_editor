@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Haworth.BOMeditor.Core.Domain;
 using Haworth.BOMeditor.Core.Dtos;
 using Haworth.BOMeditor.Core.Enums;
@@ -83,6 +84,28 @@ public class AiSettingsService : IAiSettingsService
         var setting = await GetOrCreateSettingAsync(ct);
         setting.GroundingFileName = Path.GetFileName(fileName);
         setting.GroundingFilePath = path;
+
+        // A new document invalidates every provider-side upload of the old one.
+        var providers = await _db.AiProviderConfigs.ToListAsync(ct);
+        foreach (var provider in providers)
+        {
+            provider.GroundingHandle = null;
+            provider.GroundingHandleExpiresAt = null;
+            provider.GroundingHash = null;
+        }
+
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task SaveGroundingHandleAsync(
+        AiProvider provider, string handle, DateTimeOffset? expiresAt, string? hash, CancellationToken ct = default)
+    {
+        var config = await _db.AiProviderConfigs.FirstOrDefaultAsync(c => c.Provider == provider, ct);
+        if (config is null) return;
+
+        config.GroundingHandle = handle;
+        config.GroundingHandleExpiresAt = expiresAt;
+        config.GroundingHash = hash;
         await _db.SaveChangesAsync(ct);
     }
 
@@ -100,10 +123,26 @@ public class AiSettingsService : IAiSettingsService
         var key = _protector.Unprotect(config.ApiKeyEncrypted);
 
         byte[]? grounding = null;
+        string? hash = null;
         if (setting.GroundingEnabled && !string.IsNullOrEmpty(setting.GroundingFilePath) && File.Exists(setting.GroundingFilePath))
+        {
             grounding = await File.ReadAllBytesAsync(setting.GroundingFilePath, ct);
+            hash = Convert.ToHexString(SHA256.HashData(grounding));
+        }
 
-        return new ResolvedProvider(target, config.Model, key, grounding, setting.GroundingFileName);
+        var handle = grounding is null ? null : UsableHandle(config, hash);
+        return new ResolvedProvider(
+            target, config.Model, key, grounding, setting.GroundingFileName, handle, hash);
+    }
+
+    /// <summary>A stored handle is only reusable for the same document and while it is comfortably unexpired.</summary>
+    private static string? UsableHandle(AiProviderConfig config, string? hash)
+    {
+        if (string.IsNullOrEmpty(config.GroundingHandle)) return null;
+        if (!string.Equals(config.GroundingHash, hash, StringComparison.OrdinalIgnoreCase)) return null;
+        if (config.GroundingHandleExpiresAt is DateTimeOffset expiry
+            && expiry <= DateTimeOffset.UtcNow.AddHours(1)) return null;
+        return config.GroundingHandle;
     }
 
     private async Task<AiSetting> GetOrCreateSettingAsync(CancellationToken ct)
