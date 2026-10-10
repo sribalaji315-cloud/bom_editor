@@ -14,8 +14,9 @@ public class BomValidationService(AppDbContext db, IEnumerable<IBomRuleCheck> ch
 {
     public async Task<ValidationReportDto?> ValidateAsync(Guid documentId, CancellationToken ct = default)
     {
-        var exists = await db.BomDocuments.AnyAsync(d => d.Id == documentId, ct);
-        if (!exists) return null;
+        var document = await db.BomDocuments.AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Id == documentId, ct);
+        if (document is null) return null;
 
         var lines = await db.BomLines.AsNoTracking()
             .Where(l => l.BomDocumentId == documentId && !l.IsDeleted)
@@ -26,6 +27,11 @@ public class BomValidationService(AppDbContext db, IEnumerable<IBomRuleCheck> ch
             .Where(r => r.IsActive)
             .OrderBy(r => r.Code)
             .ToListAsync(ct);
+
+        // A rule can be scoped to certain document statuses; out-of-scope rules never run.
+        rules = rules
+            .Where(r => RuleStatusScope.Includes(r.AppliesToStatuses, document.Status))
+            .ToList();
 
         var templates = await db.ReleaseTemplates.AsNoTracking()
             .Where(t => t.IsActive).Select(t => t.Name).ToListAsync(ct);

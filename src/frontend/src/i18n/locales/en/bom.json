@@ -37,6 +37,7 @@
   },
   "list": {
     "title": "BOM Documents",
+    "heading": "Documents",
     "empty": "No BOM documents yet. Import a CSV to get started.",
     "lineCount": "{{count}} line",
     "lineCount_other": "{{count}} lines",
@@ -50,6 +51,8 @@
   },
   "search": {
     "title": "Search",
+    "status": "Status",
+    "clearFilters": "Clear filters",
     "placeholder": "Search by name or author",
     "results": "{{count}} document",
     "results_other": "{{count}} documents",

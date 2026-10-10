@@ -4,6 +4,7 @@ import {
   Button,
   Group,
   Modal,
+  MultiSelect,
   Select,
   Stack,
   Switch,
@@ -15,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { ConditionBuilder } from './ConditionBuilder';
 import { parseConditions } from '../conditionExpression';
 import { CHECK_USAGE } from '../validationChecks';
+import type { BomDocumentStatus } from '../../types/bom';
 import type {
   ValidationMetadata,
   ValidationRule,
@@ -30,6 +32,7 @@ export interface ValidationRuleFormValues {
   targetField: string | null;
   parameters: string | null;
   appliesWhen: string | null;
+  appliesToStatuses: BomDocumentStatus[];
   message: string | null;
   isActive: boolean;
 }
@@ -52,7 +55,7 @@ export function ValidationRuleFormModal({
   onClose,
   onSubmit,
 }: ValidationRuleFormModalProps) {
-  const { t } = useTranslation(['validation', 'common']);
+  const { t } = useTranslation(['validation', 'common', 'bom']);
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState<ValidationRuleType>('RequiredField');
@@ -60,6 +63,7 @@ export function ValidationRuleFormModal({
   const [targetField, setTargetField] = useState<string | null>(null);
   const [parameters, setParameters] = useState('');
   const [appliesWhen, setAppliesWhen] = useState('');
+  const [appliesToStatuses, setAppliesToStatuses] = useState<BomDocumentStatus[]>([]);
   const [message, setMessage] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [textMode, setTextMode] = useState(false);
@@ -76,6 +80,7 @@ export function ValidationRuleFormModal({
       setTargetField(rule?.targetField ?? null);
       setParameters(rule?.parameters ?? '');
       setAppliesWhen(rule?.appliesWhen ?? '');
+      setAppliesToStatuses(rule?.appliesToStatuses ?? []);
       setMessage(rule?.message ?? '');
       setIsActive(rule?.isActive ?? true);
       setTextMode(false);
@@ -167,6 +172,20 @@ export function ValidationRuleFormModal({
           onChange={(e) => setParameters(e.currentTarget.value)}
           disabled={usage.parameters === 'ignored'}
         />
+        <MultiSelect
+          label={t('rules.form.appliesToStatuses')}
+          description={t('rules.form.appliesToStatusesHint')}
+          placeholder={
+            appliesToStatuses.length === 0 ? t('rules.form.appliesToStatusesPlaceholder') : undefined
+          }
+          data={(metadata?.documentStatuses ?? []).map((value) => ({
+            value,
+            label: t(`status.${value}`, { ns: 'bom' }),
+          }))}
+          value={appliesToStatuses}
+          onChange={(values) => setAppliesToStatuses(values as BomDocumentStatus[])}
+          clearable
+        />
         <Stack gap={4}>
           <Text size="sm" fw={500}>
             {t('rules.form.appliesWhen')}
@@ -241,6 +260,7 @@ export function ValidationRuleFormModal({
                 targetField,
                 parameters: parameters.trim() || null,
                 appliesWhen: appliesWhen.trim() || null,
+                appliesToStatuses,
                 message: message.trim() || null,
                 isActive,
               })

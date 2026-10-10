@@ -27,6 +27,10 @@ public record ValidationRuleFields
     public string? TargetField { get; init; }
     public string? Parameters { get; init; }
     public string? AppliesWhen { get; init; }
+
+    /// <summary>Document statuses the rule runs in; empty means every status.</summary>
+    public IReadOnlyList<string> AppliesToStatuses { get; init; } = [];
+
     public string? Message { get; init; }
 }
 
@@ -53,4 +57,5 @@ public record ValidationMetadataDto(
     IReadOnlyList<string> Fields,
     IReadOnlyList<string> Severities,
     IReadOnlyList<string> FilterFields,
-    IReadOnlyList<string> FilterOperators);
+    IReadOnlyList<string> FilterOperators,
+    IReadOnlyList<string> DocumentStatuses);

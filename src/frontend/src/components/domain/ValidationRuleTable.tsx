@@ -1,6 +1,7 @@
-import { ActionIcon, Badge, Menu, Table, Text } from '@mantine/core';
+import { ActionIcon, Badge, Group, Menu, Table, Text } from '@mantine/core';
 import { IconDots, IconEdit, IconToggleLeft, IconToggleRight, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+import { BomStatusBadge } from './BomStatusBadge';
 import type { ValidationRule } from '../../types/validation';
 
 interface ValidationRuleTableProps {
@@ -19,7 +20,7 @@ export function ValidationRuleTable({
   const { t } = useTranslation(['validation']);
 
   return (
-    <Table.ScrollContainer minWidth={900}>
+    <Table.ScrollContainer minWidth={1080}>
       <Table verticalSpacing="sm" highlightOnHover>
         <Table.Thead>
           <Table.Tr>
@@ -30,6 +31,7 @@ export function ValidationRuleTable({
             <Table.Th>{t('rules.columns.targetField')}</Table.Th>
             <Table.Th>{t('rules.columns.parameters')}</Table.Th>
             <Table.Th>{t('rules.columns.appliesWhen')}</Table.Th>
+            <Table.Th>{t('rules.columns.appliesToStatuses')}</Table.Th>
             <Table.Th>{t('rules.columns.status')}</Table.Th>
             <Table.Th w={60}>{t('rules.columns.actions')}</Table.Th>
           </Table.Tr>
@@ -58,6 +60,19 @@ export function ValidationRuleTable({
                   </Text>
                 ) : (
                   t('rules.allLines')
+                )}
+              </Table.Td>
+              <Table.Td>
+                {rule.appliesToStatuses.length === 0 ? (
+                  <Text size="sm" c="dimmed">
+                    {t('rules.allStatuses')}
+                  </Text>
+                ) : (
+                  <Group gap={4}>
+                    {rule.appliesToStatuses.map((status) => (
+                      <BomStatusBadge key={status} status={status} size="sm" />
+                    ))}
+                  </Group>
                 )}
               </Table.Td>
               <Table.Td>

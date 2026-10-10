@@ -27,6 +27,9 @@ public class ValidationRule
     /// <summary>Optional line filter, e.g. "phantom = false"; empty means the rule applies to every line.</summary>
     public string? AppliesWhen { get; set; }
 
+    /// <summary>Comma-separated document statuses the rule runs in; empty means every status.</summary>
+    public string? AppliesToStatuses { get; set; }
+
     /// <summary>Message shown to the user; supports {field}, {value} and {parameters} placeholders.</summary>
     public string? Message { get; set; }
 

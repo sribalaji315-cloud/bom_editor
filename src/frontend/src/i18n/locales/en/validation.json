@@ -24,6 +24,7 @@
     "subtitle": "Rules run on demand against a BOM. Errors block CSV export; warnings do not.",
     "empty": "No validation rules defined yet.",
     "allLines": "All lines",
+    "allStatuses": "Any status",
     "checkLabels": {
       "RequiredField": "Required field",
       "NumericField": "Numeric field",
@@ -56,6 +57,7 @@
       "targetField": "Field",
       "parameters": "Parameters",
       "appliesWhen": "Applies to",
+      "appliesToStatuses": "BOM status",
       "status": "Status",
       "actions": "Actions"
     },
@@ -104,6 +106,9 @@
         "MaxDepth": "8"
       },
       "appliesWhen": "Applies when",
+      "appliesToStatuses": "Applies to BOM status",
+      "appliesToStatusesHint": "Leave empty to run the rule whatever state the BOM is in. Pick one or more statuses to run it only then \u2014 the BOM's status at the moment Validate or Export runs is what counts.",
+      "appliesToStatusesPlaceholder": "Any status",
       "appliesWhenIntro": "Limit the rule to part of the BOM. With no conditions it checks every line.",
       "appliesWhenHint": "Operators: = != > >= < <= contains startswith in (a,b) not in (a,b) is empty / is not empty. Combine with and / or.",
       "appliesWhenPlaceholder": "phantom = false and hasChildren = true",
@@ -218,6 +223,17 @@
           "colGoal": "You want to check",
           "colCondition": "Condition",
           "note": "A condition that cannot be understood is rejected when you save, so a typo can never silently switch a rule off."
+        },
+        "appliesToStatuses": {
+          "title": "Applies to BOM status",
+          "body": "An optional list of BOM statuses the rule runs in. Use it when a requirement only has to be met later in the lifecycle \u2014 for example a BS Object ID that is only assigned once the BOM has been approved.",
+          "empty": "Leave the box empty and the rule runs whatever state the BOM is in. That is how every supplied rule is set up.",
+          "evaluation": "The rule is judged against the status the BOM is in at the moment the check runs, never the status it is moving to. That matters at each gate:",
+          "gateSubmit": "Submitting a Draft for review runs the rules that apply to Draft.",
+          "gateApprove": "Approving a BOM that is In review runs the rules that apply to In review.",
+          "gateRelease": "Releasing an Approved BOM runs the rules that apply to Approved \u2014 this is where an \u201cApproved only\u201d rule bites.",
+          "gateExport": "Exporting the CSV runs the rules that apply to the BOM's current status.",
+          "note": "A forward step is blocked while any error remains. Moving a BOM back to Draft is never blocked, so a BOM can always be sent back to be fixed."
         },
         "message": {
           "title": "Message shown to the user",

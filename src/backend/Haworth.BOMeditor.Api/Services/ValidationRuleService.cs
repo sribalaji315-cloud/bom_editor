@@ -10,11 +10,14 @@ namespace Haworth.BOMeditor.Api.Services;
 
 public class ValidationRuleService(AppDbContext db) : IValidationRuleService
 {
-    public async Task<IReadOnlyList<ValidationRuleDto>> GetAllAsync(CancellationToken ct = default) =>
-        await db.ValidationRules
+    public async Task<IReadOnlyList<ValidationRuleDto>> GetAllAsync(CancellationToken ct = default)
+    {
+        // ToDto is a static method call, so it cannot be translated to SQL; materialise first.
+        var rules = await db.ValidationRules
             .OrderBy(r => r.Code)
-            .Select(r => ToDto(r))
             .ToListAsync(ct);
+        return rules.Select(ToDto).ToList();
+    }
 
     public async Task<ValidationRuleDto> CreateAsync(CreateValidationRuleRequest request, CancellationToken ct = default)
     {
@@ -61,7 +64,8 @@ public class ValidationRuleService(AppDbContext db) : IValidationRuleService
         BomLineFieldCatalog.Keys,
         Enum.GetNames<ValidationSeverity>(),
         RuleFilter.Fields,
-        RuleFilter.Operators);
+        RuleFilter.Operators,
+        RuleStatusScope.Statuses);
 
     private static void Apply(ValidationRule rule, ValidationRuleFields fields)
     {
@@ -81,6 +85,15 @@ public class ValidationRuleService(AppDbContext db) : IValidationRuleService
         {
             throw new InvalidOperationException($"Applies when: {ex.Message}");
         }
+
+        try
+        {
+            rule.AppliesToStatuses = RuleStatusScope.Normalize(fields.AppliesToStatuses);
+        }
+        catch (FormatException ex)
+        {
+            throw new InvalidOperationException($"Applies to status: {ex.Message}");
+        }
     }
 
     private static ValidationRuleDto ToDto(ValidationRule r) => new()
@@ -93,6 +106,7 @@ public class ValidationRuleService(AppDbContext db) : IValidationRuleService
         TargetField = r.TargetField,
         Parameters = r.Parameters,
         AppliesWhen = r.AppliesWhen,
+        AppliesToStatuses = RuleStatusScope.Split(r.AppliesToStatuses),
         Message = r.Message,
         IsActive = r.IsActive
     };

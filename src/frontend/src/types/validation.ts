@@ -1,3 +1,5 @@
+import type { BomDocumentStatus } from './bom';
+
 export type ValidationSeverity = 'Error' | 'Warning';
 
 export type ValidationRuleType =
@@ -37,6 +39,7 @@ export interface ValidationRuleFields {
   targetField: string | null;
   parameters: string | null;
   appliesWhen: string | null;
+  appliesToStatuses: BomDocumentStatus[];
   message: string | null;
 }
 
@@ -56,4 +59,5 @@ export interface ValidationMetadata {
   severities: ValidationSeverity[];
   filterFields: string[];
   filterOperators: string[];
+  documentStatuses: BomDocumentStatus[];
 }

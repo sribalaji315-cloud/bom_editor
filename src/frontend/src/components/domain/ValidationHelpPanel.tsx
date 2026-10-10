@@ -272,6 +272,26 @@ export function ValidationHelpPanel({ opened, metadata, onClose }: ValidationHel
             </Accordion.Panel>
           </Accordion.Item>
 
+          <Accordion.Item value="appliesToStatuses">
+            <Accordion.Control>{t('help.fields.appliesToStatuses.title')}</Accordion.Control>
+            <Accordion.Panel>
+              <Stack gap="xs">
+                <Text size="sm">{t('help.fields.appliesToStatuses.body')}</Text>
+                <Text size="sm">{t('help.fields.appliesToStatuses.empty')}</Text>
+                <Text size="sm">{t('help.fields.appliesToStatuses.evaluation')}</Text>
+                <List spacing={4} size="sm">
+                  <List.Item>{t('help.fields.appliesToStatuses.gateSubmit')}</List.Item>
+                  <List.Item>{t('help.fields.appliesToStatuses.gateApprove')}</List.Item>
+                  <List.Item>{t('help.fields.appliesToStatuses.gateRelease')}</List.Item>
+                  <List.Item>{t('help.fields.appliesToStatuses.gateExport')}</List.Item>
+                </List>
+                <Text size="sm" c="dimmed">
+                  {t('help.fields.appliesToStatuses.note')}
+                </Text>
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
+
           <Accordion.Item value="message">
             <Accordion.Control>{t('help.fields.message.title')}</Accordion.Control>
             <Accordion.Panel>

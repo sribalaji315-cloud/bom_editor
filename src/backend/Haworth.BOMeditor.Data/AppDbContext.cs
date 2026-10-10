@@ -99,6 +99,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(r => r.Severity).HasConversion<string>().HasMaxLength(16);
             e.Property(r => r.TargetField).HasMaxLength(64);
             e.Property(r => r.AppliesWhen).HasMaxLength(512);
+            e.Property(r => r.AppliesToStatuses).HasMaxLength(128);
             e.HasIndex(r => r.Code).IsUnique();
         });
 

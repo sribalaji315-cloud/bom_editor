@@ -348,6 +348,14 @@ public class BomService(AppDbContext db, IBomValidationService validation) : IBo
         (BomDocumentStatus.Approved, BomDocumentStatus.Draft, [AppRole.DataSpecialist, AppRole.Admin])
     ];
 
+    /// <summary>Forward transitions; each requires a clean BOM. Moves back to Draft are not gated.</summary>
+    private static readonly (BomDocumentStatus From, BomDocumentStatus To)[] GatedTransitions =
+    [
+        (BomDocumentStatus.Draft, BomDocumentStatus.InReview),
+        (BomDocumentStatus.InReview, BomDocumentStatus.Approved),
+        (BomDocumentStatus.Approved, BomDocumentStatus.Released)
+    ];
+
     public async Task<BomDocumentDetailDto?> ChangeStatusAsync(
         Guid documentId, ChangeBomStatusRequest request, UserContext user, CancellationToken ct = default)
     {
@@ -360,13 +368,13 @@ public class BomService(AppDbContext db, IBomValidationService validation) : IBo
         if (!user.IsInRole(transition.Roles))
             throw new BomWorkflowException($"Your role cannot move a BOM to {request.Status}.");
 
-        // A BOM must be clean before anyone is asked to review it.
-        if (request.Status == BomDocumentStatus.InReview)
+        // A BOM must be clean before it advances; rules scoped to other statuses do not count.
+        if (GatedTransitions.Contains((document.Status, request.Status)))
         {
             var report = await validation.ValidateAsync(documentId, ct);
             if (report is { ErrorCount: > 0 })
                 throw new BomWorkflowException(
-                    $"Fix the {report.ErrorCount} validation error(s) before submitting for review.");
+                    $"Fix the {report.ErrorCount} validation error(s) before moving this BOM to {request.Status}.");
         }
 
         var previous = document.Status;
